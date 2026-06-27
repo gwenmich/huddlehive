@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -28,5 +28,26 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(spotify_bp)
 app.register_blueprint(report_bp)
 
+
+@app.route("/")
+def index():
+    return jsonify({
+        "message": "HuddleHive API is running",
+        "routes": {
+            "register": "/auth/register",
+            "login": "/auth/login",
+            "spotify_auth": "/auth/spotify",
+            "spotify_callback": "/auth/spotify/callback",
+            "report": "/report",
+            "health": "/health",
+        },
+    })
+
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
