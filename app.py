@@ -46,6 +46,11 @@ def scripts(filename):
     return send_from_directory(os.path.join(BASE_DIR, "js"), filename)
 
 
+@app.route("/assets/<path:filename>")
+def assets(filename):
+    return send_from_directory(os.path.join(BASE_DIR, "assets"), filename)
+
+
 @app.route("/pages/<path:filename>")
 def pages(filename):
     return send_from_directory(os.path.join(BASE_DIR, "pages"), filename)

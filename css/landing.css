@@ -110,7 +110,7 @@
 }
 
 .receipt-total {
-    background: rgba(29,185,84,0.06);
+    background: var(--green-glow);
 }
 
 .amount { color: var(--white); }
@@ -279,7 +279,7 @@
     transition: border-color var(--transition);
 }
 
-.compare-item:hover { border-color: #383844; }
+.compare-item:hover { border-color: var(--accent); }
 
 .compare-platform {
     font-family: var(--font-display);
@@ -299,15 +299,15 @@
 }
 
 .tier-bad    .compare-meter::-webkit-meter-optimum-value { background: var(--red);    border-radius: 99px; }
-.tier-low    .compare-meter::-webkit-meter-optimum-value { background: #E8832A;        border-radius: 99px; }
+.tier-low    .compare-meter::-webkit-meter-optimum-value { background: var(--accent);  border-radius: 99px; }
 .tier-mid    .compare-meter::-webkit-meter-optimum-value { background: var(--amber);   border-radius: 99px; }
-.tier-good   .compare-meter::-webkit-meter-optimum-value { background: #5BC47A;        border-radius: 99px; }
+.tier-good   .compare-meter::-webkit-meter-optimum-value { background: var(--primary); border-radius: 99px; }
 .tier-best   .compare-meter::-webkit-meter-optimum-value { background: var(--green);   border-radius: 99px; }
 
 .tier-bad    .compare-meter::-moz-meter-bar { background: var(--red); }
-.tier-low    .compare-meter::-moz-meter-bar { background: #E8832A; }
+.tier-low    .compare-meter::-moz-meter-bar { background: var(--accent); }
 .tier-mid    .compare-meter::-moz-meter-bar { background: var(--amber); }
-.tier-good   .compare-meter::-moz-meter-bar { background: #5BC47A; }
+.tier-good   .compare-meter::-moz-meter-bar { background: var(--primary); }
 .tier-best   .compare-meter::-moz-meter-bar { background: var(--green); }
 
 .compare-earn {
@@ -386,15 +386,15 @@
 }
 
 .ghost-badge.verified {
-    background: rgba(29,185,84,0.12);
+    background: var(--green-glow);
     color: var(--green);
     border: 1px solid var(--green-dark);
 }
 
 .ghost-badge.flagged {
-    background: rgba(232,69,60,0.1);
+    background: rgba(255, 95, 91, 0.1);
     color: var(--red);
-    border: 1px solid rgba(232,69,60,0.3);
+    border: 1px solid rgba(255, 95, 91, 0.3);
 }
 
 /* ================================================
@@ -433,7 +433,7 @@
 
 .pricing-card-featured {
     border-color: var(--green-dark);
-    background: linear-gradient(160deg, rgba(29,185,84,0.06) 0%, var(--surface-2) 50%);
+    background: linear-gradient(160deg, var(--green-glow) 0%, var(--surface-2) 50%);
 }
 
 .pricing-card-header { display: flex; flex-direction: column; gap: 8px; }

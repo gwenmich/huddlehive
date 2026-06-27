@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FanCheck — Your Report</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -14,7 +15,10 @@
 
   <header class="site-header">
     <nav class="nav" aria-label="Main navigation">
-      <a href="../index.html" class="nav-logo">FanCheck</a>
+      <a href="../index.html" class="nav-logo" aria-label="FanCheck home">
+        <img class="nav-logo-mark" src="../assets/fancheck-logo.svg" alt="" width="28" height="28">
+        <span>FanCheck</span>
+      </a>
       <nav class="nav-actions" aria-label="Account">
         <span id="nav-email" class="nav-user-email"></span>
         <button id="btn-logout" class="btn-secondary" type="button">Log out</button>
@@ -132,7 +136,10 @@
   </main>
 
   <footer class="site-footer">
-    <strong class="nav-logo">FanCheck</strong>
+    <strong class="nav-logo">
+      <img class="nav-logo-mark" src="../assets/fancheck-logo.svg" alt="" width="28" height="28">
+      <span>FanCheck</span>
+    </strong>
     <p class="footer-note">Built for music fans. Made at a hackathon.</p>
   </footer>
 
