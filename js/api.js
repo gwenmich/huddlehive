@@ -1,5 +1,5 @@
 /**
- * api.js — HuddleHive API client
+ * api.js — FanCheck API client
  * Wired to the exact endpoint spec from the backend team.
  */
 

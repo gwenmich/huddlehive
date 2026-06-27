@@ -27,7 +27,7 @@ def get_ethical_links(artist_name):
     search_response = requests.get(
         "https://musicbrainz.org/ws/2/artist/",
         params={"query": artist_name, "fmt": "json"},
-        headers={"User-Agent": "FanCheck/1.0 (Huddlehive hackathon project)"}
+        headers={"User-Agent": "FanCheck/1.0 (FanCheck hackathon project)"}
     )
 
     results = search_response.json()
@@ -40,7 +40,7 @@ def get_ethical_links(artist_name):
     detail_response = requests.get(
         f"https://musicbrainz.org/ws/2/artist/{mbid}",
         params={"inc": "url-rels", "fmt": "json"},
-        headers={"User-Agent": "FanCheck/1.0 (Huddlehive hackathon project)"}
+        headers={"User-Agent": "FanCheck/1.0 (FanCheck hackathon project)"}
     )
 
     details = detail_response.json()

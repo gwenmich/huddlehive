@@ -1,5 +1,5 @@
 /**
- * dashboard.js — HuddleHive report page
+ * dashboard.js — FanCheck report page
  * Fetches /report and renders all sections.
  */
 

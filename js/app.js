@@ -1,5 +1,5 @@
 // ================================================
-// api.js — shared API wrapper for HuddleHive
+// api.js — shared API wrapper for FanCheck
 // Backend base URL
 // ================================================
 

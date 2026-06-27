@@ -1,5 +1,5 @@
 /**
- * auth.js — HuddleHive authentication page
+ * auth.js — FanCheck authentication page
  * Tab switching, form validation, backend submission.
  */
 

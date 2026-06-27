@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: huddlehive
+    name: fancheck
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
