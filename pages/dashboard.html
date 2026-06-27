@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HuddleHive — Your Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a href="../index.html" class="nav-logo">HuddleHive</a>
+      <nav class="nav-actions" aria-label="Account">
+        <span id="nav-email" class="nav-user-email"></span>
+        <button id="btn-logout" class="btn-secondary" type="button">Log out</button>
+      </nav>
+    </nav>
+  </header>
+
+  <main class="dashboard-main">
+
+    <!-- ── Spotify connect gate (shown until Spotify is linked) ── -->
+    <section id="spotify-gate" class="gate" aria-labelledby="gate-heading" hidden>
+      <div class="gate-inner">
+        <span class="eyebrow">Step 2 of 2</span>
+        <h1 id="gate-heading" class="gate-title">Connect your Spotify</h1>
+        <p class="gate-desc">We read your listening history to calculate exactly how much of your subscription reaches your artists. We never store your password or control your account.</p>
+        <button id="btn-spotify" class="btn-primary btn-spotify-connect" type="button">
+          Connect Spotify
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Loading state ── -->
+    <section id="loading-state" class="loading-state" aria-live="polite" aria-label="Loading your report">
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Building your report…</p>
+    </section>
+
+    <!-- ── Error state ── -->
+    <section id="error-state" class="error-state" hidden aria-live="assertive">
+      <p id="error-message" class="error-message"></p>
+      <button id="btn-retry" class="btn-secondary" type="button">Try again</button>
+    </section>
+
+    <!-- ── Report (hidden until data loads) ── -->
+    <div id="report" class="report" hidden>
+
+      <!-- Summary band -->
+      <section class="summary-band" aria-labelledby="summary-heading">
+        <header class="summary-header">
+          <h1 id="summary-heading" class="summary-title">Your monthly breakdown</h1>
+          <p id="summary-plan" class="summary-plan"></p>
+        </header>
+        <ul class="summary-stats" role="list">
+          <li class="summary-stat">
+            <strong id="stat-subscription" class="stat-value">—</strong>
+            <span class="stat-label">Yearly subscription</span>
+          </li>
+          <li class="summary-stat highlight">
+            <strong id="stat-to-artists" class="stat-value">—</strong>
+            <span class="stat-label">Reached your artists</span>
+          </li>
+          <li class="summary-stat">
+            <strong id="stat-percentage" class="stat-value">—</strong>
+            <span class="stat-label">Of your money gets through</span>
+          </li>
+          <li class="summary-stat">
+            <strong id="stat-tracks" class="stat-value">—</strong>
+            <span class="stat-label">Top tracks analysed</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Top artists -->
+      <section class="artists-section" aria-labelledby="artists-heading">
+        <header class="section-header">
+          <span class="eyebrow">Where your money goes</span>
+          <h2 id="artists-heading" class="section-title">Your top artists</h2>
+        </header>
+        <ul id="artists-list" class="artists-list" role="list">
+          <!-- Populated by dashboard.js -->
+        </ul>
+      </section>
+
+      <!-- Payout comparison -->
+      <section class="compare-section" aria-labelledby="compare-heading">
+        <header class="section-header">
+          <span class="eyebrow">Not all listening is equal</span>
+          <h2 id="compare-heading" class="section-title">What artists actually earn</h2>
+        </header>
+        <ul class="payout-list" role="list">
+          <li class="payout-row">
+            <span class="payout-platform">Spotify</span>
+            <div class="payout-bar-wrap" role="meter" aria-label="Spotify payout">
+              <div class="payout-bar bar-spotify" style="--w:35%"></div>
+            </div>
+            <output id="rate-spotify" class="payout-rate">£0.0035<small>/stream</small></output>
+          </li>
+          <li class="payout-row">
+            <span class="payout-platform">Apple Music</span>
+            <div class="payout-bar-wrap" role="meter" aria-label="Apple Music payout">
+              <div class="payout-bar bar-apple" style="--w:60%"></div>
+            </div>
+            <output id="rate-apple" class="payout-rate">£0.006<small>/stream</small></output>
+          </li>
+          <li class="payout-row">
+            <span class="payout-platform">Tidal</span>
+            <div class="payout-bar-wrap" role="meter" aria-label="Tidal payout">
+              <div class="payout-bar bar-tidal" style="--w:100%"></div>
+            </div>
+            <output id="rate-tidal" class="payout-rate">£0.010<small>/stream</small></output>
+          </li>
+          <li class="payout-row payout-row-bandcamp">
+            <span class="payout-platform">Bandcamp</span>
+            <div class="payout-bar-wrap" role="meter" aria-label="Bandcamp payout">
+              <div class="payout-bar bar-bandcamp" style="--w:100%"></div>
+            </div>
+            <output id="rate-bandcamp" class="payout-rate payout-rate-green">82%<small>of sale to artist</small></output>
+          </li>
+        </ul>
+        <p id="compare-note" class="compare-note"></p>
+      </section>
+
+    </div><!-- /report -->
+
+  </main>
+
+  <footer class="site-footer">
+    <strong class="nav-logo">HuddleHive</strong>
+    <p class="footer-note">Built for music fans. Made at a hackathon.</p>
+  </footer>
+
+  <script type="module" src="../js/dashboard.js"></script>
+
+</body>
+</html>

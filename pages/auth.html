@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HuddleHive — Log in or Sign up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a href="../index.html" class="nav-logo">HuddleHive</a>
+    </nav>
+  </header>
+
+  <main class="auth-main">
+    <section class="auth-card" aria-labelledby="auth-heading">
+
+      <header class="auth-card-header">
+        <h1 id="auth-heading" class="auth-title">Your music, honestly.</h1>
+        <p class="auth-sub">See exactly how much of your subscription reaches your artists.</p>
+      </header>
+
+      <!-- Tab switcher -->
+      <div class="auth-tabs" role="tablist" aria-label="Authentication options">
+        <button
+          id="tab-login"
+          role="tab"
+          aria-selected="true"
+          aria-controls="form-login"
+          class="auth-tab"
+          type="button"
+        >Log in</button>
+        <button
+          id="tab-signup"
+          role="tab"
+          aria-selected="false"
+          aria-controls="form-signup"
+          class="auth-tab"
+          type="button"
+        >Sign up</button>
+      </div>
+
+      <!-- Login form — shown by default -->
+      <form id="form-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input
+            id="login-email"
+            type="email"
+            name="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          >
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="Your password"
+            required
+          >
+        </div>
+        <button type="submit" class="btn-primary btn-full">Log in</button>
+      </form>
+
+      <!-- Sign-up form — hidden by default -->
+      <form id="form-signup" role="tabpanel" aria-labelledby="tab-signup" hidden novalidate>
+        <div class="field">
+          <label for="signup-email">Email</label>
+          <input
+            id="signup-email"
+            type="email"
+            name="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          >
+        </div>
+        <div class="field">
+          <label for="signup-password">Password</label>
+          <input
+            id="signup-password"
+            type="password"
+            name="password"
+            autocomplete="new-password"
+            placeholder="At least 8 characters"
+            required
+          >
+        </div>
+        <div class="field">
+          <label for="signup-confirm">Confirm password</label>
+          <input
+            id="signup-confirm"
+            type="password"
+            name="confirm-password"
+            autocomplete="new-password"
+            placeholder="Repeat your password"
+            required
+          >
+        </div>
+        <button type="submit" class="btn-primary btn-full">Create account</button>
+      </form>
+
+    </section>
+  </main>
+
+  <script type="module" src="../js/auth.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuddleHive — Know Where Your Money Goes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <nav class="nav" aria-label="Main navigation">
+            <strong class="nav-logo">HuddleHive</strong>
+            <ul class="nav-links" role="list">
+                <li><a href="#how-it-works">How it works</a></li>
+                <li><a href="#compare">Why it matters</a></li>
+                <li><a href="pages/pricing.html">Pricing</a></li>
+            </ul>
+            <nav class="nav-actions" aria-label="Account">
+                <a href="pages/auth.html" class="btn-secondary">Log in</a>
+                <a href="pages/auth.html#signup" class="btn-primary">Get started</a>
+            </nav>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- HERO -->
+        <section class="hero" aria-labelledby="hero-heading">
+            <article class="hero-content">
+                <p class="eyebrow">Music streaming transparency</p>
+                <h1 id="hero-heading" class="hero-headline">
+                    You streamed them<br>
+                    <mark class="headline-accent">847 times.</mark><br>
+                    They made £0.02.
+                </h1>
+                <p class="hero-sub">
+                    Streaming platforms keep most of your money. HuddleHive shows you exactly how much of your subscription reaches your favourite artists — and how to actually support them.
+                </p>
+                <nav class="hero-actions" aria-label="Get started">
+                    <a href="pages/auth.html#signup" class="btn-primary btn-large">See where your money goes</a>
+                    <a href="#how-it-works" class="btn-ghost-link">How it works</a>
+                </nav>
+            </article>
+
+            <aside class="receipt-card card card-glow" aria-label="Example monthly breakdown">
+                <header class="receipt-header">
+                    <strong class="receipt-label">Monthly Breakdown</strong>
+                    <time class="receipt-month" datetime="2026-06">June 2026</time>
+                </header>
+                <table class="receipt-table">
+                    <tbody>
+                        <tr>
+                            <td>Your Spotify subscription</td>
+                            <td class="amount">£10.99</td>
+                        </tr>
+                        <tr>
+                            <td>To Spotify &amp; major labels</td>
+                            <td class="amount loss">−£10.86</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="receipt-total">
+                            <td>Reached your artists</td>
+                            <td class="amount gain">£0.13</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <footer class="receipt-footer">
+                    <p class="receipt-note">Based on average streaming royalty rates</p>
+                    <a href="pages/auth.html#signup" class="btn-primary" style="font-size:0.82rem; padding: 10px 20px;">See your real numbers</a>
+                </footer>
+            </aside>
+        </section>
+
+        <!-- STATS -->
+        <section class="stats-band" aria-label="Key streaming statistics">
+            <ul class="stats-list" role="list">
+                <li class="stat">
+                    <strong class="stat-number">£0.003</strong>
+                    <span class="stat-label">Average per stream to an artist</span>
+                </li>
+                <li class="stat">
+                    <strong class="stat-number">73%</strong>
+                    <span class="stat-label">Of streaming revenue kept by platforms and labels</span>
+                </li>
+                <li class="stat">
+                    <strong class="stat-number">1,000+</strong>
+                    <span class="stat-label">Streams needed for an artist to earn £3</span>
+                </li>
+                <li class="stat">
+                    <strong class="stat-number">40%</strong>
+                    <span class="stat-label">Of streamed tracks are AI or ghost-artist content</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section class="how-it-works" id="how-it-works" aria-labelledby="how-heading">
+            <header class="section-header">
+                <span class="eyebrow">How it works</span>
+                <h2 id="how-heading" class="section-title">Transparency in three steps</h2>
+            </header>
+            <ol class="steps-list" role="list">
+                <li class="step">
+                    <span class="step-num" aria-hidden="true">01</span>
+                    <h3 class="step-title">Connect your streaming</h3>
+                    <p class="step-desc">Link Spotify securely via OAuth. We only read your listening data — we never store passwords.</p>
+                </li>
+                <li class="step">
+                    <span class="step-num" aria-hidden="true">02</span>
+                    <h3 class="step-title">Get your report</h3>
+                    <p class="step-desc">We calculate exactly how much of your subscription has reached each artist, including ghost artist detection.</p>
+                </li>
+                <li class="step">
+                    <span class="step-num" aria-hidden="true">03</span>
+                    <h3 class="step-title">Support them better</h3>
+                    <p class="step-desc">Discover Bandcamp, merch stores, and live events where artists earn dramatically more per pound you spend.</p>
+                </li>
+            </ol>
+        </section>
+
+        <!-- COMPARISON -->
+        <section class="compare" id="compare" aria-labelledby="compare-heading">
+            <header class="compare-header">
+                <span class="eyebrow">Artist earnings by platform</span>
+                <h2 id="compare-heading" class="section-title">Not all listening is equal</h2>
+            </header>
+            <ul class="compare-list" role="list">
+                <li class="compare-item tier-bad">
+                    <span class="compare-platform">Spotify stream</span>
+                    <meter class="compare-meter" min="0" max="100" value="2" aria-label="Very low earnings: £0.003 per stream"></meter>
+                    <output class="compare-earn">£0.003 <small>per stream</small></output>
+                </li>
+                <li class="compare-item tier-low">
+                    <span class="compare-platform">Apple Music</span>
+                    <meter class="compare-meter" min="0" max="100" value="6" aria-label="Low earnings: £0.006 per stream"></meter>
+                    <output class="compare-earn">£0.006 <small>per stream</small></output>
+                </li>
+                <li class="compare-item tier-mid">
+                    <span class="compare-platform">Tidal</span>
+                    <meter class="compare-meter" min="0" max="100" value="11" aria-label="Medium earnings: £0.010 per stream"></meter>
+                    <output class="compare-earn">£0.010 <small>per stream</small></output>
+                </li>
+                <li class="compare-item tier-good">
+                    <span class="compare-platform">Bandcamp purchase</span>
+                    <meter class="compare-meter" min="0" max="100" value="82" aria-label="High earnings: 82% of sale"></meter>
+                    <output class="compare-earn">~82% <small>of sale price</small></output>
+                </li>
+                <li class="compare-item tier-best">
+                    <span class="compare-platform">Merch &amp; live shows</span>
+                    <meter class="compare-meter" min="0" max="100" value="100" aria-label="Highest earnings to artist"></meter>
+                    <output class="compare-earn">Highest <small>direct to artist</small></output>
+                </li>
+            </ul>
+        </section>
+
+        <!-- GHOST ARTIST TEASER -->
+        <section class="ghost-teaser" aria-labelledby="ghost-heading">
+            <article class="ghost-content">
+                <span class="eyebrow">Ghost artist detection</span>
+                <h2 id="ghost-heading" class="section-title">Who are you really listening to?</h2>
+                <p class="ghost-desc">
+                    Streaming platforms are flooded with AI-generated and ghost-artist tracks — fake accounts with fabricated streaming numbers, collecting royalties from real fans. HuddleHive flags suspicious artists in your library so you can make informed decisions about where your money goes.
+                </p>
+                <a href="pages/auth.html#signup" class="btn-primary">Scan your library</a>
+            </article>
+            <aside class="ghost-visual" aria-hidden="true">
+                <figure class="ghost-card ghost-real">
+                    <figcaption>Real artist</figcaption>
+                    <strong>The Midnight</strong>
+                    <span class="ghost-badge verified">Verified</span>
+                </figure>
+                <figure class="ghost-card ghost-fake">
+                    <figcaption>Suspicious account</figcaption>
+                    <strong>Lo-fi Study Beats</strong>
+                    <span class="ghost-badge flagged">Flagged</span>
+                </figure>
+            </aside>
+        </section>
+
+        <!-- FREEMIUM -->
+        <section class="pricing" id="pricing" aria-labelledby="pricing-heading">
+            <header class="pricing-header">
+                <span class="eyebrow">Pricing</span>
+                <h2 id="pricing-heading" class="section-title">Free for fans. Powerful for everyone.</h2>
+            </header>
+            <ul class="pricing-list" role="list">
+                <li class="pricing-card">
+                    <header class="pricing-card-header">
+                        <h3>Fan</h3>
+                        <p class="pricing-price">Free <span>forever</span></p>
+                    </header>
+                    <ul class="pricing-features" role="list">
+                        <li>Monthly earnings report</li>
+                        <li>Top 10 artist breakdown</li>
+                        <li>Platform comparison</li>
+                        <li>Basic ghost artist detection</li>
+                        <li>Alternative support links</li>
+                    </ul>
+                    <a href="pages/auth.html#signup" class="btn-secondary">Get started free</a>
+                </li>
+                <li class="pricing-card pricing-card-featured">
+                    <header class="pricing-card-header">
+                        <span class="pricing-badge">Most popular</span>
+                        <h3>Supporter</h3>
+                        <p class="pricing-price">£3.99 <span>/ month</span></p>
+                    </header>
+                    <ul class="pricing-features" role="list">
+                        <li>Everything in Fan</li>
+                        <li>Full listening history analysis</li>
+                        <li>Advanced ghost artist scoring</li>
+                        <li>Multi-platform support (coming soon)</li>
+                        <li>Personalised action recommendations</li>
+                        <li>Monthly impact report</li>
+                    </ul>
+                    <a href="pages/auth.html#signup" class="btn-primary">Start free trial</a>
+                </li>
+            </ul>
+        </section>
+
+        <!-- FINAL CTA -->
+        <section class="final-cta" aria-labelledby="cta-heading">
+            <h2 id="cta-heading" class="cta-title">Find out the truth about your listening.</h2>
+            <p class="cta-sub">Connect in seconds. No card required.</p>
+            <a href="pages/auth.html#signup" class="btn-primary btn-large">Get started free</a>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <strong class="nav-logo">HuddleHive</strong>
+        <p class="footer-note">Built for music fans. Made at a hackathon.</p>
+    </footer>
+
+</body>
+</html>

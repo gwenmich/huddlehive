@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuddleHive — Support Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/calculator.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <nav class="nav" aria-label="Main navigation">
+            <a href="../index.html" class="nav-logo">HuddleHive</a>
+            <ul class="nav-links" role="list">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="report.html">Monthly report</a></li>
+                <li><a href="calculator.html" aria-current="page">Calculator</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="calc-main">
+
+        <header class="calc-header">
+            <span class="eyebrow">Support calculator</span>
+            <h1 class="section-title">How much does your artist actually earn from you?</h1>
+            <p class="calc-sub">Adjust the sliders to see the real numbers — then discover better ways to show your support.</p>
+        </header>
+
+        <section class="calc-layout" aria-label="Calculator">
+
+            <!-- Inputs -->
+            <form class="calc-inputs card" id="calc-form" novalidate>
+
+                <fieldset class="calc-field">
+                    <label for="streams">Streams per month</label>
+                    <output class="range-value" id="streams-value" for="streams">100</output>
+                    <input
+                        type="range"
+                        id="streams"
+                        name="streams"
+                        min="1"
+                        max="2000"
+                        value="100"
+                        step="1"
+                        aria-describedby="streams-hint"
+                    >
+                    <p class="field-hint" id="streams-hint">How many times you stream tracks by this artist each month</p>
+                </fieldset>
+
+                <fieldset class="calc-field">
+                    <label for="subscription">Monthly subscription cost (£)</label>
+                    <output class="range-value" id="subscription-value" for="subscription">£10.99</output>
+                    <input
+                        type="range"
+                        id="subscription"
+                        name="subscription"
+                        min="4.99"
+                        max="17.99"
+                        value="10.99"
+                        step="0.01"
+                        aria-describedby="subscription-hint"
+                    >
+                    <p class="field-hint" id="subscription-hint">Your current streaming plan cost per month</p>
+                </fieldset>
+
+                <fieldset class="calc-field">
+                    <label for="bandcamp-spend">Bandcamp spend per month (£)</label>
+                    <output class="range-value" id="bandcamp-value" for="bandcamp-spend">£0</output>
+                    <input
+                        type="range"
+                        id="bandcamp-spend"
+                        name="bandcamp"
+                        min="0"
+                        max="50"
+                        value="0"
+                        step="0.5"
+                        aria-describedby="bandcamp-hint"
+                    >
+                    <p class="field-hint" id="bandcamp-hint">What you spend buying music directly on Bandcamp</p>
+                </fieldset>
+
+                <fieldset class="calc-field">
+                    <label for="merch-spend">Merch / live shows per month (£)</label>
+                    <output class="range-value" id="merch-value" for="merch-spend">£0</output>
+                    <input
+                        type="range"
+                        id="merch-spend"
+                        name="merch"
+                        min="0"
+                        max="100"
+                        value="0"
+                        step="1"
+                        aria-describedby="merch-hint"
+                    >
+                    <p class="field-hint" id="merch-hint">Tickets, merchandise, and other direct purchases</p>
+                </fieldset>
+
+            </form>
+
+            <!-- Results -->
+            <aside class="calc-results" aria-live="polite" aria-label="Calculation results">
+
+                <section class="result-card card card-glow">
+                    <h2 class="result-title">From your streams</h2>
+                    <strong class="result-big" id="stream-result">£0.35</strong>
+                    <p class="result-desc">estimated to reach your artist this month via Spotify streams</p>
+                </section>
+
+                <section class="result-card card">
+                    <h2 class="result-title">From your direct support</h2>
+                    <strong class="result-big gain" id="direct-result">£0.00</strong>
+                    <p class="result-desc">going directly to your artist through Bandcamp, merch, and live shows</p>
+                </section>
+
+                <section class="result-card card">
+                    <h2 class="result-title">Total artist earnings</h2>
+                    <strong class="result-big" id="total-result">£0.35</strong>
+                    <p class="result-desc">combined artist earnings from all your spending this month</p>
+                </section>
+
+                <section class="comparison-breakdown" aria-label="Platform comparison">
+                    <h2 class="breakdown-title">If you used a different platform</h2>
+                    <ul class="breakdown-list" role="list" id="breakdown-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </section>
+
+                <section class="yearly-view">
+                    <h2 class="breakdown-title">Extrapolated to one year</h2>
+                    <dl class="yearly-list">
+                        <dt>Via streams only</dt>
+                        <dd id="yearly-streams">—</dd>
+                        <dt>With your direct support</dt>
+                        <dd id="yearly-total" class="gain">—</dd>
+                        <dt>Difference</dt>
+                        <dd id="yearly-diff" class="gain">—</dd>
+                    </dl>
+                </section>
+
+            </aside>
+
+        </section>
+
+        <!-- Suggestions -->
+        <section class="suggestions" aria-labelledby="suggestions-heading">
+            <h2 id="suggestions-heading" class="section-title">Better ways to support your artists</h2>
+            <ul class="suggestions-list" role="list">
+                <li class="suggestion-card">
+                    <strong class="suggestion-platform">Bandcamp</strong>
+                    <p class="suggestion-desc">Artists keep 82–85% of every sale. Even buying one album a month transforms how much your money reaches them.</p>
+                    <dl class="suggestion-stats">
+                        <dt>Artist cut</dt><dd>~82%</dd>
+                        <dt>Platform fee</dt><dd>~15%</dd>
+                    </dl>
+                    <a href="https://bandcamp.com" target="_blank" rel="noopener noreferrer" class="btn-primary">Visit Bandcamp</a>
+                </li>
+                <li class="suggestion-card">
+                    <strong class="suggestion-platform">Tidal</strong>
+                    <p class="suggestion-desc">Pays artists 2–3x more per stream than Spotify. A simple platform switch makes a measurable difference over time.</p>
+                    <dl class="suggestion-stats">
+                        <dt>Per stream</dt><dd>£0.010</dd>
+                        <dt>vs Spotify</dt><dd>£0.003</dd>
+                    </dl>
+                    <a href="https://tidal.com" target="_blank" rel="noopener noreferrer" class="btn-secondary">Explore Tidal</a>
+                </li>
+                <li class="suggestion-card">
+                    <strong class="suggestion-platform">Merch &amp; shows</strong>
+                    <p class="suggestion-desc">The highest direct-to-artist revenue source available. Buying at the venue typically means almost all of your money goes straight to them.</p>
+                    <dl class="suggestion-stats">
+                        <dt>Artist cut</dt><dd>Up to 90%+</dd>
+                        <dt>Platform fee</dt><dd>Minimal</dd>
+                    </dl>
+                    <a href="dashboard.html" class="btn-secondary">See your artists</a>
+                </li>
+            </ul>
+        </section>
+
+    </main>
+
+    <output class="toast" id="toast" role="status" aria-live="polite"></output>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/calculator.js"></script>
+</body>
+</html>
