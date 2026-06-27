@@ -1,5 +1,4 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -18,6 +17,7 @@ db.init_app(app)
 jwt = JWTManager(app)
 
 with app.app_context():
+    import models
     db.create_all()
 
 from routes.auth import auth_bp
