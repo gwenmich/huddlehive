@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -6,6 +6,8 @@ import os
 from extensions import db
 
 load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 CORS(app)
@@ -31,17 +33,22 @@ app.register_blueprint(report_bp)
 
 @app.route("/")
 def index():
-    return jsonify({
-        "message": "HuddleHive API is running",
-        "routes": {
-            "register": "/auth/register",
-            "login": "/auth/login",
-            "spotify_auth": "/auth/spotify",
-            "spotify_callback": "/auth/spotify/callback",
-            "report": "/report",
-            "health": "/health",
-        },
-    })
+    return send_from_directory(BASE_DIR, "index.html")
+
+
+@app.route("/css/<path:filename>")
+def styles(filename):
+    return send_from_directory(os.path.join(BASE_DIR, "css"), filename)
+
+
+@app.route("/js/<path:filename>")
+def scripts(filename):
+    return send_from_directory(os.path.join(BASE_DIR, "js"), filename)
+
+
+@app.route("/pages/<path:filename>")
+def pages(filename):
+    return send_from_directory(os.path.join(BASE_DIR, "pages"), filename)
 
 
 @app.route("/health")

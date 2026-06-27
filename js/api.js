@@ -3,7 +3,7 @@
  * Wired to the exact endpoint spec from the backend team.
  */
 
-const API_BASE = 'http://127.0.0.1:5001';
+const API_BASE = window.location.origin;
 
 // ── Core fetch wrapper ────────────────────────────────────────────────
 async function request(method, path, body = null) {
@@ -25,7 +25,7 @@ async function request(method, path, body = null) {
     return {
       ok: false,
       status: 0,
-      data: { message: 'Cannot reach the server. Is Flask running on port 5001?' },
+      data: { message: 'Cannot reach the server. Please try again in a moment.' },
     };
   }
 }

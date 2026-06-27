@@ -1,9 +1,9 @@
 // ================================================
 // api.js — shared API wrapper for HuddleHive
-// Backend base URL — update if deployed elsewhere
+// Backend base URL
 // ================================================
 
-const API_BASE = 'http://127.0.0.1:5001';
+const API_BASE = window.location.origin;
 
 // ------------------------------------------------
 // Token helpers
