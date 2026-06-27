@@ -36,7 +36,7 @@
   font-weight: 700;
   color: var(--white);
   margin: 0 0 0.5rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .auth-sub {
