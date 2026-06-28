@@ -43,6 +43,11 @@ CORS(
             "allow_headers": ["Content-Type", "Authorization"],
             "methods": ["POST", "OPTIONS"],
         },
+        r"/data/*": {
+            "origins": extension_cors_origins(),
+            "allow_headers": ["Content-Type", "Authorization"],
+            "methods": ["GET", "POST", "OPTIONS"],
+        },
     },
 )
 
@@ -81,11 +86,13 @@ from routes.auth import auth_bp
 from routes.spotify import spotify_bp
 from routes.report import report_bp
 from routes.extension import extension_bp
+from data_routes import data_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(spotify_bp)
 app.register_blueprint(report_bp)
 app.register_blueprint(extension_bp)
+app.register_blueprint(data_bp)
 
 
 @app.route("/")
