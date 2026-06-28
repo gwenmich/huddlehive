@@ -186,4 +186,108 @@ async function loadReport() {
 }
 
 // ── Kick off ──────────────────────────────────────────────────────────
-loadReport();
+//loadReport();  ------- commented out to show dummy data below
+
+
+function loadDummy() {
+  const data = {
+    user: {
+      email: "example@example.com",
+      spotify_display_name: "Jane",
+      spotify_plan: "premium"
+    },
+    summary: {
+      yearly_spotify_subscription_gbp: 143.88,
+      total_estimated_paid_to_artists_gbp: 12.40,
+      percentage_reaching_artists: "8.6%",
+      top_tracks_count: 20
+    },
+    top_artists: [
+      {
+        name: "I Prevail",
+        popularity_score: 72,
+        estimated_streams_from_you: 720000,
+        estimated_earnings_from_you_gbp: 2.52,
+        image: null,
+        spotify_url: "https://open.spotify.com/artist/0xRXCcSX89mBiTQGDiYQu3",
+        ethical_alternatives: { bandcamp: "https://iprevail.bandcamp.com" }
+      },
+      {
+        name: "Spiritbox",
+        popularity_score: 68,
+        estimated_streams_from_you: 680000,
+        estimated_earnings_from_you_gbp: 2.38,
+        image: null,
+        spotify_url: "https://open.spotify.com/artist/4GW6PbJMCBQ6GDiGTgU9sB",
+        ethical_alternatives: { bandcamp: "https://spiritbox.bandcamp.com" }
+      },
+      {
+        name: "Bad Omens",
+        popularity_score: 74,
+        estimated_streams_from_you: 740000,
+        estimated_earnings_from_you_gbp: 2.59,
+        image: null,
+        spotify_url: "https://open.spotify.com/artist/7z6G9RbDkTXBBaBfAf4QjS",
+        ethical_alternatives: { official_site: "https://badomensmusic.com" }
+      },
+      {
+        name: "Poppy",
+        popularity_score: 65,
+        estimated_streams_from_you: 650000,
+        estimated_earnings_from_you_gbp: 2.28,
+        image: null,
+        spotify_url: "https://open.spotify.com/artist/1Tvfd1joSCMhkGBQbZEfwg",
+        ethical_alternatives: { bandcamp: "https://iampoppy.bandcamp.com" }
+      },
+      {
+        name: "Sleep Token",
+        popularity_score: 80,
+        estimated_streams_from_you: 800000,
+        estimated_earnings_from_you_gbp: 2.80,
+        image: null,
+        spotify_url: "https://open.spotify.com/artist/0WwSkZ7LtFUFjGjMZBMt6T",
+        ethical_alternatives: null
+      }
+    ],
+    payout_comparison: {
+      spotify_per_stream_gbp: 0.0035,
+      apple_music_per_stream_gbp: 0.006,
+      tidal_per_stream_gbp: 0.010,
+      bandcamp_artist_cut_percent: 82,
+      note: "UK rates based on 2026 industry averages. Actual payouts vary."
+    }
+  };
+
+  // reuse all the existing render logic
+  navEmail.textContent = data.user.email;
+
+  const s = data.summary;
+  statSubscription.textContent = `£${s.yearly_spotify_subscription_gbp.toFixed(2)}`;
+  statToArtists.textContent    = `£${s.total_estimated_paid_to_artists_gbp.toFixed(2)}`;
+  statPercentage.textContent   = s.percentage_reaching_artists;
+  statTracks.textContent       = s.top_tracks_count;
+  summaryPlan.textContent      = `Spotify Premium account · ${data.user.spotify_display_name}`;
+
+  artistsList.innerHTML = '';
+  data.top_artists.forEach((artist, i) => {
+    artistsList.appendChild(renderArtist(artist, i));
+  });
+
+  const p = data.payout_comparison;
+  rateSpotify.innerHTML  = `£${p.spotify_per_stream_gbp}<small>/stream</small>`;
+  rateApple.innerHTML    = `£${p.apple_music_per_stream_gbp}<small>/stream</small>`;
+  rateTidal.innerHTML    = `£${p.tidal_per_stream_gbp}<small>/stream</small>`;
+  rateBandcamp.innerHTML = `${p.bandcamp_artist_cut_percent}%<small>of sale to artist</small>`;
+  compareNote.textContent = p.note;
+
+  showOnly(report);
+}
+
+
+
+
+
+// ── Kick off ──────────────────────────────────────────────────────────
+loadDummy();
+
+
