@@ -117,9 +117,9 @@ def get_report():
         "top_artists": artists,
         "summary": summary,
         "payout_comparison": {
-            "spotify_per_stream_usd": SPOTIFY_PAYOUT_PER_STREAM,
-            "apple_music_per_stream_usd": 0.006,
-            "tidal_per_stream_usd": 0.010,
+            "spotify_per_stream_gbp": SPOTIFY_PAYOUT_PER_STREAM,
+            "apple_music_per_stream_gbp": 0.006,
+            "tidal_per_stream_gbp": 0.010,
             "bandcamp_artist_cut_percent": 82,
             "note": "UK rates based on 2026 industry averages. Actual payouts vary."
         }
