@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FanCheck</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="fancheck-popup">
+  <main class="popup-shell">
+    <header class="popup-header">
+      <span class="fancheck-mark" aria-hidden="true"></span>
+      <div>
+        <h1>FanCheck</h1>
+        <p id="connection-status">Checking status...</p>
+      </div>
+    </header>
+
+    <section class="popup-section" aria-labelledby="actions-title">
+      <h2 id="actions-title">This Page</h2>
+      <div class="popup-actions">
+        <button id="check-page" class="fancheck-btn fancheck-btn-primary" type="button">Check this page</button>
+        <button id="report-site" class="fancheck-btn fancheck-btn-secondary" type="button">Report this site</button>
+      </div>
+      <label for="report-note">Report note</label>
+      <textarea id="report-note" maxlength="500" rows="3" placeholder="Optional: why this looks like a music transaction site"></textarea>
+      <p class="popup-help">Do not include personal, order, payment, or account details.</p>
+      <p class="popup-help">This helps us decide whether to support this site. We won’t analyze this page from a report.</p>
+    </section>
+
+    <section class="popup-section" aria-labelledby="account-title">
+      <h2 id="account-title">Account</h2>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password">
+        <button class="fancheck-btn fancheck-btn-primary fancheck-full" type="submit">Connect</button>
+      </form>
+      <button id="disconnect" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Disconnect</button>
+    </section>
+
+    <section class="popup-section" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <label for="backend-url">Backend URL</label>
+      <input id="backend-url" type="url" spellcheck="false">
+      <button id="save-backend" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Save backend</button>
+
+      <label for="region">Region</label>
+      <select id="region">
+        <option value="UK">UK</option>
+        <option value="US">US</option>
+        <option value="EU">EU</option>
+        <option value="Other">Other</option>
+      </select>
+      <fieldset>
+        <legend>Alternative preferences</legend>
+        <label class="checkbox"><input type="checkbox" value="venue" name="alternative"> Venue direct</label>
+        <label class="checkbox"><input type="checkbox" value="artist_direct" name="alternative"> Artist direct</label>
+        <label class="checkbox"><input type="checkbox" value="face_value_resale" name="alternative"> Face-value resale</label>
+        <label class="checkbox"><input type="checkbox" value="lower_fee_platform" name="alternative"> Lower-fee platforms</label>
+        <label class="checkbox"><input type="checkbox" value="independent_store" name="alternative"> Bandcamp/independent stores</label>
+      </fieldset>
+      <button id="save-preferences" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Save preferences</button>
+    </section>
+
+    <section class="popup-section" aria-labelledby="privacy-title">
+      <h2 id="privacy-title">Privacy</h2>
+      <p id="consent-status" class="popup-help">Consent status unavailable.</p>
+      <button id="revoke-global" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Revoke global consent</button>
+      <button id="revoke-site" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Revoke this site</button>
+      <p class="popup-help">Page text is sent only after consent, redacted first, and may be processed by Anthropic for analysis. Redaction is best-effort.</p>
+    </section>
+
+    <section class="popup-section">
+      <button id="open-fancheck" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Open FanCheck</button>
+      <button id="open-detail" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">View sources and details</button>
+    </section>
+
+    <p id="status-message" class="popup-status" aria-live="polite"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
