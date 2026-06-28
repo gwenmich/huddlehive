@@ -44,6 +44,7 @@ ANTHROPIC_MODEL
 ANTHROPIC_WEB_SEARCH_ENABLED
 ANTHROPIC_WEB_SEARCH_TOOL_VERSION
 ANTHROPIC_WEB_SEARCH_MAX_USES
+ANTHROPIC_REQUEST_TIMEOUT_SECONDS
 FAN_CHECK_DATA_CONFIDENCE_TIMEOUT_SECONDS
 FAN_CHECK_SITE_REPORT_TRIAGE_ENABLED
 FAN_CHECK_ALLOWED_EXTENSION_ORIGINS
@@ -104,26 +105,25 @@ because a known domain matches.
 
 ## Extension Workflows
 
-### Manual “Check This Page”
+### Manual “Analyse This Purchase”
 
-The popup “Check this page” action uses `activeTab` and `chrome.scripting` for a
-one-time scan of the current page. It asks for consent before sending a short
-best-effort redacted snippet to `POST /extension/analyze`.
+The popup “Analyse this purchase” action uses `activeTab` and `chrome.scripting`
+for a one-time scan of the current page. It asks for consent before sending a
+short best-effort redacted snippet to `POST /extension/analyze`.
 
 The consent flow supports:
 
-- allow once
-- always allow for this site
-- always allow for all sites
-- no thanks
+- allow for all sites
+- allow for this site
+- not now
 
-Users can revoke site/global consent from the popup. Consent is separate from
-site reporting.
+Users can revoke all source-check permissions or revoke permission for the
+current site from the popup. Consent is separate from site suggestions.
 
-### Manual “Report This Site”
+### Manual “Suggest This Site”
 
-If FanCheck does not trigger automatically, the user can click the popup and
-report the current site as a possible music transaction site. `POST
+If FanCheck cannot analyse a page yet, the popup offers “Suggest this site.”
+This sends the site to FanCheck for future support review. `POST
 /extension/site-reports` sends metadata only:
 
 - URL without query string or fragment
@@ -250,12 +250,12 @@ freshness behavior.
 ## Manual QA Checklist
 
 - Known domains show local detection only; no page text is sent automatically.
-- “Check with current sources” requires consent before backend analysis.
-- Unknown-site “Check this page” works from the popup with `activeTab`.
-- Unknown or missed-site “Report this site” sends only URL/title/note/signals.
+- “Analyse this purchase” requires consent before backend analysis.
+- Unknown-site “Analyse this purchase” works from the popup with `activeTab`.
+- Failed analysis can reveal “Suggest this site,” which sends only URL/title/note/signals.
 - Report confirmation copy says: “Thanks, we’ll review this site before enabling
   analysis.”
-- Report note length is capped and privacy helper copy warns against personal,
+- Suggestion note length is capped and privacy helper copy warns against personal,
   order, payment, or account details.
 - Overlay “View sources and details” opens the FanCheck `/analysis/<analysis_id>`
   page.

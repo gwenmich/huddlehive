@@ -38,7 +38,7 @@
     --muted: #7a756c;
     --muted-light: var(--muted-foreground);
 
-    --font-display: 'Archivo Black', sans-serif;
+    --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
     --font-body: ui-sans-serif, system-ui, sans-serif;
 
     --radius-sm:   8px;

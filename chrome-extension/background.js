@@ -1,15 +1,13 @@
 const DEFAULT_BACKEND_URL = 'https://fancheck.onrender.com';
+const CONSENT_FLOW_VERSION = 2;
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const data = await chrome.storage.local.get(['fancheck_backend_url']);
-  if (!data.fancheck_backend_url) {
-    await chrome.storage.local.set({ fancheck_backend_url: DEFAULT_BACKEND_URL });
-  }
+  await chrome.storage.local.remove(['fancheck_backend_url']);
+  await ensureConsentMigration();
 });
 
 async function getBackendUrl() {
-  const data = await chrome.storage.local.get(['fancheck_backend_url']);
-  return (data.fancheck_backend_url || DEFAULT_BACKEND_URL).replace(/\/+$/, '');
+  return DEFAULT_BACKEND_URL;
 }
 
 async function authHeaders() {
@@ -33,13 +31,9 @@ async function fancheckFetch(path, options = {}) {
 }
 
 async function analyzePage(payload) {
-  const data = await chrome.storage.local.get(['fancheck_preferences']);
   return fancheckFetch('/extension/analyze', {
     method: 'POST',
-    body: JSON.stringify({
-      ...payload,
-      preferences: data.fancheck_preferences || {}
-    })
+    body: JSON.stringify(payload)
   });
 }
 
@@ -62,23 +56,79 @@ async function login(payload) {
   return { connected: true };
 }
 
+async function register(payload) {
+  await fancheckFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email: payload.email, password: payload.password })
+  });
+  return login(payload);
+}
+
+async function ensureConsentMigration(data = null) {
+  const current = data || await chrome.storage.local.get([
+    'fancheck_consent_flow_version',
+    'fancheck_privacy_consent',
+    'fancheck_privacy_consent_domains',
+    'fancheck_permission_onboarding_seen'
+  ]);
+  if (current.fancheck_consent_flow_version === CONSENT_FLOW_VERSION) {
+    return current;
+  }
+  await chrome.storage.local.remove(['fancheck_privacy_consent', 'fancheck_privacy_consent_domains']);
+  await chrome.storage.local.set({ fancheck_consent_flow_version: CONSENT_FLOW_VERSION });
+  return { fancheck_consent_flow_version: CONSENT_FLOW_VERSION };
+}
+
 async function getState() {
   const data = await chrome.storage.local.get([
     'fancheck_token',
-    'fancheck_backend_url',
+    'fancheck_consent_flow_version',
     'fancheck_privacy_consent',
     'fancheck_privacy_consent_domains',
-    'fancheck_preferences',
+    'fancheck_permission_onboarding_seen',
     'fancheck_last_detail_url'
   ]);
+  const migrated = await ensureConsentMigration(data);
   return {
     connected: Boolean(data.fancheck_token),
-    backendUrl: data.fancheck_backend_url || DEFAULT_BACKEND_URL,
-    globalConsent: data.fancheck_privacy_consent === true,
-    domainConsent: data.fancheck_privacy_consent_domains || {},
-    preferences: data.fancheck_preferences || {},
+    backendUrl: DEFAULT_BACKEND_URL,
+    globalConsent: migrated.fancheck_privacy_consent === true,
+    domainConsent: migrated.fancheck_privacy_consent_domains || {},
+    permissionOnboardingSeen: data.fancheck_permission_onboarding_seen === true,
     lastDetailUrl: data.fancheck_last_detail_url || null
   };
+}
+
+async function grantGlobalConsent() {
+  await ensureConsentMigration();
+  await chrome.storage.local.set({
+    fancheck_privacy_consent: true,
+    fancheck_permission_onboarding_seen: true,
+    fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+  });
+}
+
+async function grantSiteConsent(hostname) {
+  if (!hostname) {
+    throw new Error('No current site to allow.');
+  }
+  await ensureConsentMigration();
+  const data = await chrome.storage.local.get(['fancheck_privacy_consent_domains']);
+  const domains = data.fancheck_privacy_consent_domains || {};
+  domains[hostname] = true;
+  await chrome.storage.local.set({
+    fancheck_privacy_consent_domains: domains,
+    fancheck_permission_onboarding_seen: true,
+    fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+  });
+}
+
+async function declinePermission() {
+  await ensureConsentMigration();
+  await chrome.storage.local.set({
+    fancheck_permission_onboarding_seen: true,
+    fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+  });
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -102,6 +152,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ ok: true, data });
         return;
       }
+      if (message?.type === 'FC_REGISTER') {
+        const data = await register(message.payload || {});
+        sendResponse({ ok: true, data });
+        return;
+      }
       if (message?.type === 'FC_LOGOUT') {
         await chrome.storage.local.remove(['fancheck_token']);
         sendResponse({ ok: true });
@@ -112,21 +167,27 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return;
       }
       if (message?.type === 'FC_SET_BACKEND_URL') {
-        const backendUrl = String(message.backendUrl || '').trim().replace(/\/+$/, '');
-        if (!/^https?:\/\/.+/i.test(backendUrl)) {
-          throw new Error('Backend URL must start with http:// or https://.');
-        }
-        await chrome.storage.local.set({ fancheck_backend_url: backendUrl });
-        sendResponse({ ok: true, data: { backendUrl } });
+        sendResponse({ ok: true, data: { backendUrl: DEFAULT_BACKEND_URL } });
         return;
       }
-      if (message?.type === 'FC_SAVE_PREFERENCES') {
-        await chrome.storage.local.set({ fancheck_preferences: message.preferences || {} });
+      if (message?.type === 'FC_GRANT_GLOBAL_CONSENT') {
+        await grantGlobalConsent();
+        sendResponse({ ok: true });
+        return;
+      }
+      if (message?.type === 'FC_GRANT_SITE_CONSENT') {
+        await grantSiteConsent(message.hostname);
+        sendResponse({ ok: true });
+        return;
+      }
+      if (message?.type === 'FC_DECLINE_PERMISSION') {
+        await declinePermission();
         sendResponse({ ok: true });
         return;
       }
       if (message?.type === 'FC_REVOKE_GLOBAL_CONSENT') {
-        await chrome.storage.local.remove(['fancheck_privacy_consent']);
+        await chrome.storage.local.remove(['fancheck_privacy_consent', 'fancheck_privacy_consent_domains']);
+        await chrome.storage.local.set({ fancheck_consent_flow_version: CONSENT_FLOW_VERSION });
         sendResponse({ ok: true });
         return;
       }
@@ -134,7 +195,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const data = await chrome.storage.local.get(['fancheck_privacy_consent_domains']);
         const domains = data.fancheck_privacy_consent_domains || {};
         delete domains[message.hostname];
-        await chrome.storage.local.set({ fancheck_privacy_consent_domains: domains });
+        await chrome.storage.local.set({
+          fancheck_privacy_consent_domains: domains,
+          fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+        });
         sendResponse({ ok: true });
         return;
       }
