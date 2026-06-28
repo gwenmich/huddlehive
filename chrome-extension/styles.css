@@ -1,0 +1,429 @@
+:root {
+  --fancheck-bg: #0b0d13;
+  --fancheck-surface: #14161c;
+  --fancheck-surface-2: #1c1f27;
+  --fancheck-text: #f7f5ec;
+  --fancheck-muted: #a7a59c;
+  --fancheck-border: #2b2e36;
+  --fancheck-primary: #d1f760;
+  --fancheck-accent: #d57aea;
+  --fancheck-danger: #ff5f5b;
+  --fancheck-warning: #ffc93b;
+  --fancheck-focus: #d1f760;
+}
+
+.fancheck-overlay,
+.fancheck-overlay *,
+#fancheck-consent-dialog,
+#fancheck-consent-dialog *,
+.fancheck-popup,
+.fancheck-popup * {
+  box-sizing: border-box;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+.fancheck-overlay {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: min(360px, calc(100vw - 28px));
+  max-height: min(720px, calc(100vh - 36px));
+  overflow: auto;
+  z-index: 2147483647;
+  background: var(--fancheck-bg);
+  color: var(--fancheck-text);
+  border: 1px solid var(--fancheck-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.42);
+  padding: 16px;
+  animation: fancheck-slide-up 180ms ease;
+}
+
+.fancheck-overlay.fancheck-compact {
+  right: 18px;
+  bottom: auto;
+  top: 18px;
+}
+
+.fancheck-header,
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fancheck-header {
+  padding-right: 32px;
+  margin-bottom: 14px;
+}
+
+.fancheck-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, var(--fancheck-primary) 0 48%, transparent 49%),
+    linear-gradient(315deg, var(--fancheck-accent) 0 48%, var(--fancheck-surface-2) 49%);
+  flex: 0 0 auto;
+}
+
+.fancheck-header strong,
+.popup-header h1 {
+  display: block;
+  color: var(--fancheck-text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.fancheck-header span,
+.popup-header p {
+  display: block;
+  color: var(--fancheck-muted);
+  font-size: 12px;
+  line-height: 1.3;
+  margin: 2px 0 0;
+}
+
+.fancheck-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--fancheck-border);
+  border-radius: 8px;
+  background: var(--fancheck-surface);
+  color: var(--fancheck-text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.fancheck-body h2 {
+  color: var(--fancheck-text);
+  font-size: 18px;
+  line-height: 1.22;
+  margin: 0 0 8px;
+}
+
+.fancheck-body h3 {
+  color: var(--fancheck-text);
+  font-size: 13px;
+  margin: 14px 0 8px;
+}
+
+.fancheck-muted,
+.fancheck-footer {
+  color: var(--fancheck-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 8px 0;
+}
+
+.fancheck-footer {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+
+.fancheck-actions {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 8px;
+}
+
+.fancheck-btn {
+  appearance: none;
+  border-radius: 8px;
+  border: 1px solid var(--fancheck-border);
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fancheck-btn-primary {
+  background: var(--fancheck-primary);
+  color: #0b0d13;
+  border-color: var(--fancheck-primary);
+}
+
+.fancheck-btn-secondary {
+  background: var(--fancheck-surface);
+  color: var(--fancheck-text);
+}
+
+.fancheck-full {
+  width: 100%;
+}
+
+.fancheck-rows {
+  border: 1px solid var(--fancheck-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.fancheck-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  background: var(--fancheck-surface);
+  border-bottom: 1px solid var(--fancheck-border);
+  color: var(--fancheck-muted);
+  font-size: 12px;
+}
+
+.fancheck-row:last-child {
+  border-bottom: 0;
+}
+
+.fancheck-row strong {
+  color: var(--fancheck-text);
+  text-align: right;
+}
+
+.fancheck-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--fancheck-surface-2);
+  color: var(--fancheck-text);
+}
+
+.fancheck-pill-high {
+  background: rgba(209, 247, 96, 0.16);
+  color: var(--fancheck-primary);
+}
+
+.fancheck-pill-medium {
+  background: rgba(255, 201, 59, 0.16);
+  color: var(--fancheck-warning);
+}
+
+.fancheck-pill-low {
+  background: rgba(255, 95, 91, 0.16);
+  color: var(--fancheck-danger);
+}
+
+.fancheck-warning {
+  border: 1px solid rgba(255, 201, 59, 0.34);
+  border-left: 4px solid var(--fancheck-warning);
+  border-radius: 8px;
+  background: rgba(255, 201, 59, 0.1);
+  color: var(--fancheck-text);
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.fancheck-alternatives {
+  margin: 12px 0;
+}
+
+.fancheck-alt {
+  display: block;
+  border-left: 3px solid var(--fancheck-primary);
+  background: var(--fancheck-surface);
+  color: var(--fancheck-text);
+  border-radius: 6px;
+  padding: 9px 10px;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.fancheck-alt strong,
+.fancheck-alt span {
+  display: block;
+}
+
+.fancheck-alt span {
+  color: var(--fancheck-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+#fancheck-consent-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  background: rgba(11, 13, 19, 0.62);
+  padding: 18px;
+}
+
+.fancheck-consent-panel {
+  width: min(420px, 100%);
+  background: var(--fancheck-bg);
+  color: var(--fancheck-text);
+  border: 1px solid var(--fancheck-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  padding: 18px;
+}
+
+.fancheck-consent-panel h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+
+.fancheck-consent-panel p {
+  color: var(--fancheck-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0 0 14px;
+}
+
+.fancheck-consent-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.fancheck-popup {
+  width: 360px;
+  min-height: 520px;
+  margin: 0;
+  background: var(--fancheck-bg);
+  color: var(--fancheck-text);
+}
+
+.popup-shell {
+  padding: 14px;
+}
+
+.popup-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--fancheck-border);
+  margin-bottom: 12px;
+}
+
+.popup-section {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--fancheck-border);
+}
+
+.popup-section h2,
+.popup-section legend {
+  color: var(--fancheck-text);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.popup-section label {
+  display: block;
+  color: var(--fancheck-muted);
+  font-size: 12px;
+  margin: 8px 0 4px;
+}
+
+.popup-section input,
+.popup-section textarea,
+.popup-section select {
+  width: 100%;
+  border: 1px solid var(--fancheck-border);
+  border-radius: 8px;
+  background: var(--fancheck-surface);
+  color: var(--fancheck-text);
+  min-height: 36px;
+  padding: 8px 9px;
+  font-size: 13px;
+}
+
+.popup-section textarea {
+  resize: vertical;
+}
+
+.popup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.popup-help,
+.popup-status {
+  color: var(--fancheck-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 7px 0 0;
+}
+
+.popup-status.success {
+  color: var(--fancheck-primary);
+}
+
+.popup-status.error {
+  color: var(--fancheck-danger);
+}
+
+.checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  color: var(--fancheck-text) !important;
+}
+
+.checkbox input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.fancheck-popup fieldset {
+  border: 0;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.fancheck-overlay button:focus-visible,
+#fancheck-consent-dialog button:focus-visible,
+.fancheck-popup button:focus-visible,
+.fancheck-popup input:focus-visible,
+.fancheck-popup textarea:focus-visible,
+.fancheck-popup select:focus-visible,
+.fancheck-popup a:focus-visible {
+  outline: 2px solid var(--fancheck-focus);
+  outline-offset: 2px;
+}
+
+.fancheck-overlay button:disabled,
+#fancheck-consent-dialog button:disabled,
+.fancheck-popup button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes fancheck-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 520px) {
+  .fancheck-overlay {
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-height: 80vh;
+    border-radius: 8px 8px 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fancheck-overlay {
+    animation: none;
+  }
+}
