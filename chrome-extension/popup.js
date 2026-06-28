@@ -10,8 +10,6 @@ const els = {
   email: document.getElementById('email'),
   password: document.getElementById('password'),
   disconnect: document.getElementById('disconnect'),
-  backendUrl: document.getElementById('backend-url'),
-  saveBackend: document.getElementById('save-backend'),
   region: document.getElementById('region'),
   savePreferences: document.getElementById('save-preferences'),
   consentStatus: document.getElementById('consent-status'),
@@ -78,7 +76,6 @@ async function loadState() {
   currentState = response.data;
 
   els.connectionStatus.textContent = currentState.connected ? 'Connected to FanCheck' : 'Not connected';
-  els.backendUrl.value = currentState.backendUrl || DEFAULT_BACKEND_URL;
   els.region.value = currentState.preferences.region || 'UK';
 
   const preferred = new Set(currentState.preferences.preferredAlternativeTypes || []);
@@ -129,14 +126,6 @@ async function reportThisSite() {
   const triage = data.ai_recommendation ? ` AI triage: ${data.ai_recommendation}.` : '';
   setStatus(`${data.message || 'Thanks, we’ll review this site before enabling analysis.'}${triage}`, 'success');
   els.reportNote.value = '';
-}
-
-async function saveBackend() {
-  const backendUrl = els.backendUrl.value.trim();
-  const response = await sendBackground({ type: 'FC_SET_BACKEND_URL', backendUrl });
-  if (!response?.ok) throw new Error(response?.error || 'Could not save backend URL.');
-  setStatus('Backend URL saved.', 'success');
-  await loadState();
 }
 
 async function savePreferences() {
@@ -200,15 +189,13 @@ function wrap(handler) {
 
 els.checkPage.addEventListener('click', wrap(checkThisPage));
 els.reportSite.addEventListener('click', wrap(reportThisSite));
-els.saveBackend.addEventListener('click', wrap(saveBackend));
 els.savePreferences.addEventListener('click', wrap(savePreferences));
 els.loginForm.addEventListener('submit', wrap(connectAccount));
 els.disconnect.addEventListener('click', wrap(disconnect));
 els.revokeGlobal.addEventListener('click', wrap(revokeGlobalConsent));
 els.revokeSite.addEventListener('click', wrap(revokeSiteConsent));
 els.openFancheck.addEventListener('click', () => {
-  const url = els.backendUrl.value.trim() || DEFAULT_BACKEND_URL;
-  chrome.tabs.create({ url });
+  chrome.tabs.create({ url: DEFAULT_BACKEND_URL });
 });
 els.openDetail.addEventListener('click', wrap(async () => {
   const response = await sendBackground({ type: 'FC_GET_STATE' });

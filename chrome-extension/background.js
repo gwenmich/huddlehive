@@ -1,15 +1,11 @@
 const DEFAULT_BACKEND_URL = 'https://fancheck.onrender.com';
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const data = await chrome.storage.local.get(['fancheck_backend_url']);
-  if (!data.fancheck_backend_url) {
-    await chrome.storage.local.set({ fancheck_backend_url: DEFAULT_BACKEND_URL });
-  }
+  await chrome.storage.local.remove(['fancheck_backend_url']);
 });
 
 async function getBackendUrl() {
-  const data = await chrome.storage.local.get(['fancheck_backend_url']);
-  return (data.fancheck_backend_url || DEFAULT_BACKEND_URL).replace(/\/+$/, '');
+  return DEFAULT_BACKEND_URL;
 }
 
 async function authHeaders() {
@@ -65,7 +61,6 @@ async function login(payload) {
 async function getState() {
   const data = await chrome.storage.local.get([
     'fancheck_token',
-    'fancheck_backend_url',
     'fancheck_privacy_consent',
     'fancheck_privacy_consent_domains',
     'fancheck_preferences',
@@ -73,7 +68,7 @@ async function getState() {
   ]);
   return {
     connected: Boolean(data.fancheck_token),
-    backendUrl: data.fancheck_backend_url || DEFAULT_BACKEND_URL,
+    backendUrl: DEFAULT_BACKEND_URL,
     globalConsent: data.fancheck_privacy_consent === true,
     domainConsent: data.fancheck_privacy_consent_domains || {},
     preferences: data.fancheck_preferences || {},
@@ -112,12 +107,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return;
       }
       if (message?.type === 'FC_SET_BACKEND_URL') {
-        const backendUrl = String(message.backendUrl || '').trim().replace(/\/+$/, '');
-        if (!/^https?:\/\/.+/i.test(backendUrl)) {
-          throw new Error('Backend URL must start with http:// or https://.');
-        }
-        await chrome.storage.local.set({ fancheck_backend_url: backendUrl });
-        sendResponse({ ok: true, data: { backendUrl } });
+        sendResponse({ ok: true, data: { backendUrl: DEFAULT_BACKEND_URL } });
         return;
       }
       if (message?.type === 'FC_SAVE_PREFERENCES') {
