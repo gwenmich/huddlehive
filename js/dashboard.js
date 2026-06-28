@@ -130,7 +130,7 @@ async function loadReport() {
   const { ok, status, data } = await getReport();
 
   // 401 = token expired or Spotify not connected yet
-  if (status === 401) {
+  if (status === 401 || status === 400) {
     showOnly(spotifyGate);
     return;
   }
