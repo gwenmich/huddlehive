@@ -1,6 +1,16 @@
 (() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    const initHeroLogoAnimation = () => {
+        const logo = document.querySelector('[data-motion-src]');
+        if (!logo || prefersReducedMotion) return;
+
+        const motionSrc = logo.getAttribute('data-motion-src');
+        if (motionSrc) {
+            logo.src = motionSrc;
+        }
+    };
+
     const tickerItems = [
         {
             action: 'You streamed',
@@ -58,6 +68,7 @@
         }
     };
 
+    initHeroLogoAnimation();
     initHeroTicker();
 
     const carousel = document.querySelector('[data-artist-carousel]');
