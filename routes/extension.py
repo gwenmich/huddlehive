@@ -25,6 +25,7 @@ MAX_REDACTED_TEXT_CHARS = 2000
 MAX_DETECTED_PRICES = 20
 MAX_CONTINUATIONS = 2
 MAX_REPORT_NOTE_CHARS = 500
+DEFAULT_ANTHROPIC_TIMEOUT_SECONDS = 12
 PREFLIGHT_VERSION = 1
 PREFLIGHT_MIN_SCORE = 60
 PREFLIGHT_ALLOWED_BANDS = {"HIGH", "MEDIUM"}
@@ -131,6 +132,18 @@ def _env_bool(name, default):
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_float(name, default, minimum=None, maximum=None):
+    try:
+        value = float(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        value = float(default)
+    if minimum is not None:
+        value = max(float(minimum), value)
+    if maximum is not None:
+        value = min(float(maximum), value)
+    return value
 
 
 def _base_url():
@@ -830,7 +843,13 @@ def _call_anthropic(payload, parsed):
         },
     }
 
-    client = Anthropic(api_key=api_key)
+    request_timeout = _env_float(
+        "ANTHROPIC_REQUEST_TIMEOUT_SECONDS",
+        DEFAULT_ANTHROPIC_TIMEOUT_SECONDS,
+        minimum=3,
+        maximum=25,
+    )
+    client = Anthropic(api_key=api_key, timeout=request_timeout, max_retries=0)
     kwargs = {
         "model": model,
         "max_tokens": 1600,

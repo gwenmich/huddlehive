@@ -144,6 +144,14 @@ class BackendPrivacyTests(unittest.TestCase):
         self.assertEqual(body["source_check_status"], "unavailable")
         self.assertFalse(body["result"]["estimate"]["available"])
 
+    def test_anthropic_timeout_fallback_without_crash(self):
+        with patch.object(extension, "_anthropic_messages_create", side_effect=TimeoutError("slow provider")):
+            response = self.client.post("/extension/analyze", json=analyze_payload())
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertEqual(body["source_check_status"], "unavailable")
+        self.assertFalse(body["result"]["estimate"]["available"])
+
     def test_weak_preflight_does_not_call_anthropic(self):
         payload = analyze_payload()
         payload["preflight"] = {
