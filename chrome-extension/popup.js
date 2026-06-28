@@ -4,14 +4,18 @@ const els = {
   connectionStatus: document.getElementById('connection-status'),
   statusMessage: document.getElementById('status-message'),
   checkPage: document.getElementById('check-page'),
-  reportSite: document.getElementById('report-site'),
+  analysisFailure: document.getElementById('analysis-failure'),
+  showSuggestSite: document.getElementById('show-suggest-site'),
+  suggestSitePanel: document.getElementById('suggest-site-panel'),
+  sendSuggestion: document.getElementById('send-suggestion'),
   reportNote: document.getElementById('report-note'),
   loginForm: document.getElementById('login-form'),
   email: document.getElementById('email'),
   password: document.getElementById('password'),
+  accountSubmit: document.getElementById('account-submit'),
+  modeSignin: document.getElementById('mode-signin'),
+  modeRegister: document.getElementById('mode-register'),
   disconnect: document.getElementById('disconnect'),
-  region: document.getElementById('region'),
-  savePreferences: document.getElementById('save-preferences'),
   consentStatus: document.getElementById('consent-status'),
   revokeGlobal: document.getElementById('revoke-global'),
   revokeSite: document.getElementById('revoke-site'),
@@ -21,10 +25,18 @@ const els = {
 
 let currentTab = null;
 let currentState = null;
+let accountMode = 'signin';
 
 function setStatus(message, type = '') {
   els.statusMessage.textContent = message || '';
   els.statusMessage.className = `popup-status ${type}`.trim();
+}
+
+function setBusy(isBusy, label) {
+  els.accountSubmit.disabled = isBusy;
+  els.checkPage.disabled = isBusy;
+  els.sendSuggestion.disabled = isBusy;
+  if (label) setStatus(label);
 }
 
 function sendBackground(message) {
@@ -69,6 +81,32 @@ async function scanCurrentTab() {
   return { tab, scan: response.scan };
 }
 
+function setAccountMode(mode) {
+  accountMode = mode;
+  const isRegister = mode === 'register';
+  els.modeSignin.classList.toggle('active', !isRegister);
+  els.modeRegister.classList.toggle('active', isRegister);
+  els.modeSignin.setAttribute('aria-pressed', String(!isRegister));
+  els.modeRegister.setAttribute('aria-pressed', String(isRegister));
+  els.accountSubmit.textContent = isRegister ? 'Create account' : 'Sign in';
+  els.password.autocomplete = isRegister ? 'new-password' : 'current-password';
+  setStatus('');
+}
+
+function renderConsentState() {
+  const host = currentTab ? tabHostname(currentTab) : '';
+  const siteConsent = host && currentState?.domainConsent?.[host] === true;
+  if (currentState?.globalConsent) {
+    els.consentStatus.textContent = 'Source checks: allowed for all sites';
+  } else if (siteConsent) {
+    els.consentStatus.textContent = `Source checks: allowed for ${host}`;
+  } else {
+    els.consentStatus.textContent = 'Source checks: ask first';
+  }
+  els.revokeGlobal.disabled = !currentState?.globalConsent && !Object.keys(currentState?.domainConsent || {}).length;
+  els.revokeSite.disabled = !siteConsent;
+}
+
 async function loadState() {
   currentTab = await chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => tab || null);
   const response = await sendBackground({ type: 'FC_GET_STATE' });
@@ -76,37 +114,39 @@ async function loadState() {
   currentState = response.data;
 
   els.connectionStatus.textContent = currentState.connected ? 'Connected to FanCheck' : 'Not connected';
-  els.region.value = currentState.preferences.region || 'UK';
-
-  const preferred = new Set(currentState.preferences.preferredAlternativeTypes || []);
-  document.querySelectorAll('input[name="alternative"]').forEach((input) => {
-    input.checked = preferred.has(input.value);
-  });
-
-  const host = currentTab ? tabHostname(currentTab) : '';
-  const siteConsent = host && currentState.domainConsent?.[host] === true;
-  els.consentStatus.textContent = [
-    currentState.globalConsent ? 'Global consent enabled' : 'Global consent off',
-    host ? `${host}: ${siteConsent ? 'site consent enabled' : 'site consent off'}` : null
-  ].filter(Boolean).join(' · ');
-  els.revokeSite.disabled = !siteConsent;
+  els.disconnect.disabled = !currentState.connected;
   els.openDetail.disabled = !currentState.lastDetailUrl;
+  renderConsentState();
 }
 
-async function checkThisPage() {
-  setStatus('Preparing page check...');
+async function analyseThisPurchase() {
+  setStatus('Preparing source check...');
+  els.analysisFailure.hidden = true;
+  els.suggestSitePanel.hidden = true;
   const tab = await activeTab();
   await ensureContent(tab.id);
   const response = await chrome.tabs.sendMessage(tab.id, { type: 'FC_START_ANALYZE' });
   if (!response?.ok) {
-    throw new Error(response?.error || response?.reason || 'Page check did not complete.');
+    if (response?.reason === 'consent_declined') {
+      setStatus('No page text was sent.', 'success');
+      await loadState();
+      return;
+    }
+    els.analysisFailure.hidden = false;
+    throw new Error(response?.error || response?.reason || 'FanCheck could not analyse this page yet.');
   }
   setStatus('FanCheck overlay updated on this page.', 'success');
   await loadState();
 }
 
-async function reportThisSite() {
-  setStatus('Reporting site...');
+function showSuggestionPanel() {
+  els.suggestSitePanel.hidden = false;
+  els.reportNote.focus();
+  setStatus('');
+}
+
+async function sendSiteSuggestion() {
+  setStatus('Sending suggestion...');
   const { scan } = await scanCurrentTab();
   const note = els.reportNote.value.trim().slice(0, 500);
   const response = await sendBackground({
@@ -120,24 +160,12 @@ async function reportThisSite() {
     }
   });
   if (!response?.ok) {
-    throw new Error(response?.error || 'Could not report this site.');
+    throw new Error(response?.error || 'Could not send this suggestion.');
   }
   const data = response.data || {};
-  const triage = data.ai_recommendation ? ` AI triage: ${data.ai_recommendation}.` : '';
-  setStatus(`${data.message || 'Thanks, we’ll review this site before enabling analysis.'}${triage}`, 'success');
+  setStatus(data.message || 'Thanks, we’ll review this site before enabling analysis.', 'success');
   els.reportNote.value = '';
-}
-
-async function savePreferences() {
-  const preferredAlternativeTypes = Array.from(document.querySelectorAll('input[name="alternative"]:checked')).map((input) => input.value);
-  const preferences = {
-    region: els.region.value,
-    preferredAlternativeTypes
-  };
-  const response = await sendBackground({ type: 'FC_SAVE_PREFERENCES', preferences });
-  if (!response?.ok) throw new Error(response?.error || 'Could not save preferences.');
-  setStatus('Preferences saved.', 'success');
-  await loadState();
+  els.suggestSitePanel.hidden = true;
 }
 
 async function connectAccount(event) {
@@ -147,11 +175,20 @@ async function connectAccount(event) {
   if (!email || !password) {
     throw new Error('Enter email and password.');
   }
-  const response = await sendBackground({ type: 'FC_LOGIN', payload: { email, password } });
-  if (!response?.ok) throw new Error(response?.error || 'Could not connect account.');
-  els.password.value = '';
-  setStatus('Connected to FanCheck.', 'success');
-  await loadState();
+
+  setBusy(true, accountMode === 'register' ? 'Creating account...' : 'Signing in...');
+  try {
+    const message = accountMode === 'register'
+      ? { type: 'FC_REGISTER', payload: { email, password } }
+      : { type: 'FC_LOGIN', payload: { email, password } };
+    const response = await sendBackground(message);
+    if (!response?.ok) throw new Error(response?.error || 'Could not connect account.');
+    setStatus(accountMode === 'register' ? 'Account created and connected.' : 'Connected to FanCheck.', 'success');
+    await loadState();
+  } finally {
+    els.password.value = '';
+    setBusy(false);
+  }
 }
 
 async function disconnect() {
@@ -163,8 +200,8 @@ async function disconnect() {
 
 async function revokeGlobalConsent() {
   const response = await sendBackground({ type: 'FC_REVOKE_GLOBAL_CONSENT' });
-  if (!response?.ok) throw new Error(response?.error || 'Could not revoke global consent.');
-  setStatus('Global consent revoked.', 'success');
+  if (!response?.ok) throw new Error(response?.error || 'Could not revoke permissions.');
+  setStatus('Source-check permissions revoked.', 'success');
   await loadState();
 }
 
@@ -172,8 +209,8 @@ async function revokeSiteConsent() {
   const host = currentTab ? tabHostname(currentTab) : '';
   if (!host) throw new Error('No current site to revoke.');
   const response = await sendBackground({ type: 'FC_REVOKE_SITE_CONSENT', hostname: host });
-  if (!response?.ok) throw new Error(response?.error || 'Could not revoke site consent.');
-  setStatus('Site consent revoked.', 'success');
+  if (!response?.ok) throw new Error(response?.error || 'Could not revoke permissions for this site.');
+  setStatus('Site permission revoked.', 'success');
   await loadState();
 }
 
@@ -187,9 +224,11 @@ function wrap(handler) {
   };
 }
 
-els.checkPage.addEventListener('click', wrap(checkThisPage));
-els.reportSite.addEventListener('click', wrap(reportThisSite));
-els.savePreferences.addEventListener('click', wrap(savePreferences));
+els.checkPage.addEventListener('click', wrap(analyseThisPurchase));
+els.showSuggestSite.addEventListener('click', showSuggestionPanel);
+els.sendSuggestion.addEventListener('click', wrap(sendSiteSuggestion));
+els.modeSignin.addEventListener('click', () => setAccountMode('signin'));
+els.modeRegister.addEventListener('click', () => setAccountMode('register'));
 els.loginForm.addEventListener('submit', wrap(connectAccount));
 els.disconnect.addEventListener('click', wrap(disconnect));
 els.revokeGlobal.addEventListener('click', wrap(revokeGlobalConsent));
@@ -204,4 +243,5 @@ els.openDetail.addEventListener('click', wrap(async () => {
   chrome.tabs.create({ url: detailUrl });
 }));
 
+setAccountMode('signin');
 loadState().catch((error) => setStatus(error.message, 'error'));

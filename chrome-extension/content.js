@@ -7,6 +7,7 @@
   const OVERLAY_ID = 'fancheck-overlay';
   const CONSENT_ID = 'fancheck-consent-dialog';
   const MAX_TEXT_CHARS = 2000;
+  const CONSENT_FLOW_VERSION = 2;
 
   const checkoutSignals = [
     'checkout', 'basket', 'cart', 'order total', 'payment', 'delivery',
@@ -188,8 +189,30 @@
     return chrome.storage.local.set(values);
   }
 
+  async function storageRemove(keys) {
+    return chrome.storage.local.remove(keys);
+  }
+
+  async function ensureConsentMigration(data = null) {
+    const current = data || await storageGet([
+      'fancheck_consent_flow_version',
+      'fancheck_privacy_consent',
+      'fancheck_privacy_consent_domains'
+    ]);
+    if (current.fancheck_consent_flow_version === CONSENT_FLOW_VERSION) {
+      return current;
+    }
+    await storageRemove(['fancheck_privacy_consent', 'fancheck_privacy_consent_domains']);
+    await storageSet({ fancheck_consent_flow_version: CONSENT_FLOW_VERSION });
+    return { fancheck_consent_flow_version: CONSENT_FLOW_VERSION };
+  }
+
   async function hasConsent(host) {
-    const data = await storageGet(['fancheck_privacy_consent', 'fancheck_privacy_consent_domains']);
+    const data = await ensureConsentMigration(await storageGet([
+      'fancheck_consent_flow_version',
+      'fancheck_privacy_consent',
+      'fancheck_privacy_consent_domains'
+    ]));
     if (data.fancheck_privacy_consent === true) return true;
     const domains = data.fancheck_privacy_consent_domains || {};
     return domains[host] === true;
@@ -210,33 +233,38 @@
       panel.className = 'fancheck-consent-panel';
 
       const title = document.createElement('h2');
-      title.textContent = 'Check with current sources?';
+      title.textContent = 'Analyse this purchase?';
       const copy = document.createElement('p');
-      copy.textContent = 'FanCheck can check this page against current public sources by sending a short redacted text snippet to your FanCheck backend. Redaction is best-effort and may not remove every personal detail. The backend may send the redacted snippet and minimized search context to Anthropic, a third-party AI provider, for analysis.';
+      copy.textContent = 'FanCheck can analyse this purchase against current public sources by sending a short redacted text snippet to your FanCheck backend. Redaction is best-effort and may not remove every personal detail. The backend may send the redacted snippet and minimized search context to Anthropic, a third-party AI provider, for analysis.';
 
       const actions = document.createElement('div');
       actions.className = 'fancheck-consent-actions';
       const buttons = [
-        ['Allow once', async () => true],
-        ['Always allow for this site', async () => {
+        ['Allow for all sites', async () => {
+          await storageSet({
+            fancheck_privacy_consent: true,
+            fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+          });
+          return true;
+        }],
+        ['Allow for this site', async () => {
           const data = await storageGet(['fancheck_privacy_consent_domains']);
           const domains = data.fancheck_privacy_consent_domains || {};
           domains[host] = true;
-          await storageSet({ fancheck_privacy_consent_domains: domains });
+          await storageSet({
+            fancheck_privacy_consent_domains: domains,
+            fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+          });
           return true;
         }],
-        ['Always allow for all sites', async () => {
-          await storageSet({ fancheck_privacy_consent: true });
-          return true;
-        }],
-        ['No thanks', async () => false]
+        ['Not now', async () => false]
       ];
 
       for (const [label, handler] of buttons) {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = label;
-        button.className = label === 'No thanks' ? 'fancheck-btn fancheck-btn-secondary' : 'fancheck-btn fancheck-btn-primary';
+        button.className = label === 'Not now' ? 'fancheck-btn fancheck-btn-secondary' : 'fancheck-btn fancheck-btn-primary';
         button.addEventListener('click', async () => {
           const allowed = await handler();
           dialog.remove();
@@ -260,7 +288,7 @@
     const scan = scanPage();
     const allowed = await requestConsent(scan.hostname);
     if (!allowed) {
-      renderOverlay({ mode: 'local', scan, message: 'No page text was sent. You can still report this site for review.' });
+      renderOverlay({ mode: 'local', scan, message: 'No page text was sent.' });
       return { ok: false, reason: 'consent_declined' };
     }
 
@@ -304,8 +332,10 @@
 
     const header = document.createElement('div');
     header.className = 'fancheck-header';
-    const mark = document.createElement('span');
-    mark.className = 'fancheck-mark';
+    const mark = document.createElement('img');
+    mark.className = 'fancheck-logo';
+    mark.src = chrome.runtime.getURL('icons/fancheck-logo.svg');
+    mark.alt = '';
     mark.setAttribute('aria-hidden', 'true');
     const title = document.createElement('div');
     const titleName = document.createElement('strong');
@@ -358,7 +388,7 @@
       const check = document.createElement('button');
       check.type = 'button';
       check.className = 'fancheck-btn fancheck-btn-primary';
-      check.textContent = 'Check with current sources';
+      check.textContent = 'Analyse this purchase';
       check.addEventListener('click', () => analyzeCurrentPage('overlay'));
       actions.append(check);
       body.append(actions);
