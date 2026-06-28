@@ -3,7 +3,7 @@ import requests
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlencode
 from flask import Blueprint, redirect, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import decode_token
 from models import User
 from extensions import db
 
@@ -17,13 +17,24 @@ SCOPES = "user-top-read user-read-recently-played user-read-private"
 
 
 @spotify_bp.route("/auth/spotify")
-@jwt_required()
 def spotify_login():
+    token = request.args.get("token")
+
+    if not token:
+        return jsonify({"error": "Missing token"}), 401
+
+    try:
+        decoded = decode_token(token)
+        user_id = decoded["sub"]
+    except Exception:
+        return jsonify({"error": "Invalid token"}), 401
+
     params = {
         "client_id": SPOTIFY_CLIENT_ID,
         "response_type": "code",
         "redirect_uri": SPOTIFY_REDIRECT_URI,
         "scope": SCOPES,
+        "state": user_id,
     }
 
     spotify_auth_url = "https://accounts.spotify.com/authorize?" + urlencode(params)
@@ -31,12 +42,12 @@ def spotify_login():
 
 
 @spotify_bp.route("/auth/spotify/callback")
-@jwt_required()
 def spotify_callback():
     code = request.args.get("code")
+    user_id = request.args.get("state")
 
-    if not code:
-        return jsonify({"error": "No code received from Spotify"}), 400
+    if not code or not user_id:
+        return jsonify({"error": "Missing code or state"}), 400
 
     token_response = requests.post(
         "https://accounts.spotify.com/api/token",
@@ -53,20 +64,18 @@ def spotify_callback():
     if "error" in token_data:
         return jsonify({"error": token_data["error"]}), 400
 
-    user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
     user.spotify_access_token = token_data["access_token"]
     user.spotify_refresh_token = token_data["refresh_token"]
-
     user.spotify_token_expires_at = datetime.now(timezone.utc) + timedelta(
         seconds=token_data["expires_in"]
     )
-
     db.session.commit()
 
-    return jsonify({"message": "Spotify connected successfully!"})
-
+    return redirect("/pages/dashboard.html")
 
 
 def refresh_spotify_token(user):
@@ -85,7 +94,6 @@ def refresh_spotify_token(user):
         seconds=token_data["expires_in"]
     )
     db.session.commit()
-
 
 
 def get_valid_token(user):
