@@ -43,6 +43,11 @@ CORS(
             "allow_headers": ["Content-Type", "Authorization"],
             "methods": ["POST", "OPTIONS"],
         },
+        r"/auth/register": {
+            "origins": extension_cors_origins(),
+            "allow_headers": ["Content-Type", "Authorization"],
+            "methods": ["POST", "OPTIONS"],
+        },
         r"/data/*": {
             "origins": extension_cors_origins(),
             "allow_headers": ["Content-Type", "Authorization"],

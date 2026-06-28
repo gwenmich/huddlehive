@@ -98,6 +98,21 @@ class BackendPrivacyTests(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertIn("ANTHROPIC_API_KEY", response.get_json()["error"])
 
+    def test_auth_register_allows_extension_cors(self):
+        response = self.client.options(
+            "/auth/register",
+            headers={
+                "Origin": "chrome-extension://oldelpnmpmohnlpaaimcpemgjembecje",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers.get("Access-Control-Allow-Origin"),
+            "chrome-extension://oldelpnmpmohnlpaaimcpemgjembecje",
+        )
+
     def test_citation_mismatch_omits_estimate(self):
         with patch.object(extension, "_call_anthropic", return_value=(cited_result("https://bad.example/source"), citation(), [], None, None)):
             response = self.client.post("/extension/analyze", json=analyze_payload())
