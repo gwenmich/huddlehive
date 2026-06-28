@@ -13,7 +13,7 @@ def register():
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "Email already registered"}), 400
 
-    hashed_password = generate_password_hash(data["password"])
+    hashed_password = generate_password_hash(data["password"], method="pbkdf2:sha256")
     user = User(email=data["email"], password = hashed_password)
 
     db.session.add(user)
