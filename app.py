@@ -51,7 +51,11 @@ CORS(
     },
 )
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fancheck.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    os.getenv("DATABASE_URL")
+    or os.getenv("SQLALCHEMY_DATABASE_URI")
+    or "sqlite:///fancheck.db"
+)
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 
 db.init_app(app)
