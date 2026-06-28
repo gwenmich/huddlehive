@@ -97,6 +97,9 @@ def refresh_spotify_token(user):
 
 
 def get_valid_token(user):
-    if datetime.now(timezone.utc) >= user.spotify_token_expires_at:
+    expires_at = user.spotify_token_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) >= expires_at:
         refresh_spotify_token(user)
     return user.spotify_access_token
