@@ -1,7 +1,7 @@
 /**
  * api.js — FanCheck API client
  */
-const API_BASE = "http://127.0.0.1:5000";
+const API_BASE = "https://fancheck-wzpz.onrender.com";
 
 // ── Core fetch wrapper ────────────────────────────────────────────────
 async function request(method, path, body = null) {
