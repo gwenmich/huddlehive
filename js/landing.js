@@ -5,22 +5,22 @@
         {
             action: 'You streamed',
             count: '4,320 mins.',
-            impact: 'Artists made £0.64.',
+            impact: 'Artists may keep ~£0.70.',
         },
         {
             action: 'You bought',
             count: '12 albums.',
-            impact: 'Artists made £96.',
+            impact: 'Artists may keep ~£95.',
         },
         {
             action: 'You attended',
             count: '8 concerts.',
-            impact: 'Artists made £560.',
+            impact: 'Artists may keep ~£80.',
         },
         {
             action: 'You bought',
             count: '3 merch drops.',
-            impact: 'Artists made £90.',
+            impact: 'Artists may keep ~£36.',
         },
     ];
 
