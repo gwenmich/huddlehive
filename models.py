@@ -47,3 +47,22 @@ class SiteReport(db.Model):
     ai_reason = db.Column(db.String(500), nullable=True)
     ai_category = db.Column(db.String(80), nullable=True)
     ai_checked_at = db.Column(db.DateTime, nullable=True)
+
+
+class DataPoint(db.Model):
+    key = db.Column(db.String(120), primary_key=True)
+    label = db.Column(db.String(200), nullable=False)
+    figure_low = db.Column(db.Float, nullable=True)
+    figure_high = db.Column(db.Float, nullable=True)
+    figure_point = db.Column(db.Float, nullable=True)
+    unit = db.Column(db.String(40), nullable=True)
+    currency = db.Column(db.String(12), nullable=True)
+    confidence_score = db.Column(db.Integer, nullable=False, default=0)
+    confidence_band = db.Column(db.String(20), nullable=False, default="INSUFFICIENT")
+    sources_json = db.Column(db.Text, nullable=False)
+    methodology_notes = db.Column(db.Text, nullable=True)
+    contradictions = db.Column(db.Text, nullable=True)
+    dimension_scores_json = db.Column(db.Text, nullable=False)
+    dimension_evidence_json = db.Column(db.Text, nullable=False)
+    last_updated = db.Column(db.DateTime, nullable=False)
+    display_json = db.Column(db.Text, nullable=False)

@@ -41,6 +41,7 @@ ANTHROPIC_MODEL
 ANTHROPIC_WEB_SEARCH_ENABLED
 ANTHROPIC_WEB_SEARCH_TOOL_VERSION
 ANTHROPIC_WEB_SEARCH_MAX_USES
+FAN_CHECK_DATA_CONFIDENCE_TIMEOUT_SECONDS
 FAN_CHECK_SITE_REPORT_TRIAGE_ENABLED
 FAN_CHECK_ALLOWED_EXTENSION_ORIGINS
 FAN_CHECK_BASE_URL
@@ -107,6 +108,41 @@ payment info, account info, full basket contents, or raw checkout text.
 Source URLs suggested in Anthropic JSON are treated as untrusted until they
 match actual Anthropic citation blocks. If citations are missing or web search
 fails, FanCheck omits numerical estimates and shows qualitative guidance.
+
+## Global Data Confidence
+
+FanCheck also has a separate global data-confidence layer in
+`data_confidence.py` and `data_routes.py`.
+
+This layer researches recurring industry data points such as streaming payout
+rates, Bandcamp revenue share, ticket fee ranges, secondary-market markup,
+major-label royalty rates, and venue merch commission. It uses Anthropic Web
+Search from the backend only, validates source URLs against actual citation
+blocks, scores each figure with a five-part rubric, and stores only sanitized
+derived results in the `DataPoint` table.
+
+Endpoints:
+
+- `GET /data/confidence`: returns all configured global data points with safe
+  defaults for missing or stale records.
+- `GET /data/confidence/<key>`: returns one global data point.
+- `POST /data/confidence/refresh`: refreshes stale or selected records. Requires
+  JWT auth. Send `{ "force": true }` to refresh even when records are fresh, or
+  `{ "key": "venue_merch_commission" }` for one record. When no key is provided,
+  the demo route refreshes one stale or missing record per request by default.
+  A small `limit` value from 1 to 3 may be supplied for demo admin use.
+
+`FAN_CHECK_DATA_CONFIDENCE_TIMEOUT_SECONDS` is optional and defaults to 45
+seconds. If Anthropic Web Search does not return in time, FanCheck stores a safe
+`INSUFFICIENT` result instead of blocking the server indefinitely. If a previous
+valid DataPoint exists, a failed refresh keeps that older record rather than
+overwriting it with an insufficient fallback.
+
+Global DataPoint records are separate from transaction-specific extension
+analysis. Both use a 24-hour freshness window for demo consistency, but the
+transaction analysis cache must not be mixed with `DataPoint` records.
+Transaction analysis may use global DataPoint values as background context only,
+never as event-specific truth.
 
 ## Caching
 
