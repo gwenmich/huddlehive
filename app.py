@@ -1,133 +1,98 @@
-from flask import Flask, jsonify, send_from_directory
-from flask_jwt_extended import JWTManager
-from flask_cors import CORS
-from dotenv import load_dotenv
 import os
-import re
+from datetime import timedelta
+from flask import Flask, jsonify, redirect, request, send_from_directory
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from dotenv import load_dotenv
+
 from extensions import db
-from sqlalchemy import text
 
 load_dotenv()
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 app = Flask(__name__)
 
-
-def extension_cors_origins():
-    configured = [
-        origin.strip()
-        for origin in os.getenv("FAN_CHECK_ALLOWED_EXTENSION_ORIGINS", "").split(",")
-        if origin.strip()
-    ]
-    if configured:
-        return configured
-
-    return [
-        "http://localhost:5000",
-        "http://127.0.0.1:5000",
-        re.compile(r"^chrome-extension://[a-p]{32}$"),
-    ]
-
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///huddlehive.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fancheck-local-secret-change-this")
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "query_string"]
+app.config["JWT_QUERY_STRING_NAME"] = "token"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=12)
 
 CORS(
     app,
     resources={
-        r"/extension/*": {
-            "origins": extension_cors_origins(),
+        r"/*": {
+            "origins": ["*"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
-            "methods": ["GET", "POST", "PATCH", "OPTIONS"],
-        },
-        r"/auth/login": {
-            "origins": extension_cors_origins(),
-            "allow_headers": ["Content-Type", "Authorization"],
-            "methods": ["POST", "OPTIONS"],
-        },
-        r"/data/*": {
-            "origins": extension_cors_origins(),
-            "allow_headers": ["Content-Type", "Authorization"],
-            "methods": ["GET", "POST", "OPTIONS"],
-        },
+            "supports_credentials": False,
+        }
     },
 )
-
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    os.getenv("DATABASE_URL")
-    or os.getenv("SQLALCHEMY_DATABASE_URI")
-    or "sqlite:///fancheck.db"
-)
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 
 db.init_app(app)
 jwt = JWTManager(app)
 
 
-def ensure_demo_schema():
-    if db.engine.dialect.name != "sqlite":
-        return
-
-    site_report_columns = {
-        row[1]
-        for row in db.session.execute(text("PRAGMA table_info(site_report)")).fetchall()
-    }
-    for column_name, column_type in {
-        "ai_recommendation": "VARCHAR(40)",
-        "ai_confidence": "INTEGER",
-        "ai_reason": "VARCHAR(500)",
-        "ai_category": "VARCHAR(80)",
-        "ai_checked_at": "DATETIME",
-    }.items():
-        if column_name not in site_report_columns:
-            db.session.execute(text(f"ALTER TABLE site_report ADD COLUMN {column_name} {column_type}"))
-    db.session.commit()
-
-with app.app_context():
-    import models
-    db.create_all()
-    ensure_demo_schema()
-
-from routes.auth import auth_bp
-from routes.spotify import spotify_bp
-from routes.report import report_bp
-from routes.extension import extension_bp
-from data_routes import data_bp
-
-app.register_blueprint(auth_bp)
-app.register_blueprint(spotify_bp)
-app.register_blueprint(report_bp)
-app.register_blueprint(extension_bp)
-app.register_blueprint(data_bp)
-
-
 @app.route("/")
-def index():
-    return send_from_directory(BASE_DIR, "index.html")
+def home():
+    return send_from_directory(".", "index.html")
+
+
+@app.route("/health")
+def health_check():
+    return jsonify({"status": "ok"}), 200
+
+
+@app.route("/callback")
+@app.route("/auth/callback")
+def spotify_callback_alias():
+    query = request.query_string.decode()
+    target = "/auth/spotify/callback"
+    if query:
+        target += "?" + query
+    return redirect(target)
+
+
+@app.route("/pages/<path:page>")
+def pages(page):
+    return send_from_directory("pages", page)
 
 
 @app.route("/css/<path:filename>")
-def styles(filename):
-    return send_from_directory(os.path.join(BASE_DIR, "css"), filename)
+def css(filename):
+    return send_from_directory("css", filename)
 
 
 @app.route("/js/<path:filename>")
-def scripts(filename):
-    return send_from_directory(os.path.join(BASE_DIR, "js"), filename)
+def js(filename):
+    return send_from_directory("js", filename)
 
 
 @app.route("/assets/<path:filename>")
 def assets(filename):
-    return send_from_directory(os.path.join(BASE_DIR, "assets"), filename)
+    return send_from_directory("assets", filename)
 
 
-@app.route("/pages/<path:filename>")
-def pages(filename):
-    return send_from_directory(os.path.join(BASE_DIR, "pages"), filename)
+blueprints = [
+    ("routes.auth", "auth_bp"),
+    ("routes.spotify", "spotify_bp"),
+    ("routes.report", "report_bp"),
+]
+
+for module_name, blueprint_name in blueprints:
+    try:
+        module = __import__(module_name, fromlist=[blueprint_name])
+        app.register_blueprint(getattr(module, blueprint_name))
+        print(f"Registered {module_name}.{blueprint_name}")
+    except Exception as e:
+        print(f"Warning: could not register {module_name}.{blueprint_name}: {e}")
 
 
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
+with app.app_context():
+    db.create_all()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=int(os.getenv("PORT", 5001)), debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)
