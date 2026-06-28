@@ -4,6 +4,11 @@ const els = {
   connectionStatus: document.getElementById('connection-status'),
   statusMessage: document.getElementById('status-message'),
   checkPage: document.getElementById('check-page'),
+  actionStatus: document.getElementById('action-status'),
+  popupConsentPanel: document.getElementById('popup-consent-panel'),
+  allowAllSites: document.getElementById('allow-all-sites'),
+  allowThisSite: document.getElementById('allow-this-site'),
+  denyConsent: document.getElementById('deny-consent'),
   analysisFailure: document.getElementById('analysis-failure'),
   showSuggestSite: document.getElementById('show-suggest-site'),
   suggestSitePanel: document.getElementById('suggest-site-panel'),
@@ -26,16 +31,25 @@ const els = {
 let currentTab = null;
 let currentState = null;
 let accountMode = 'signin';
+let analysisTab = null;
 
 function setStatus(message, type = '') {
   els.statusMessage.textContent = message || '';
   els.statusMessage.className = `popup-status ${type}`.trim();
 }
 
+function setActionStatus(message, type = '') {
+  els.actionStatus.textContent = message || '';
+  els.actionStatus.className = `popup-action-status ${type}`.trim();
+}
+
 function setBusy(isBusy, label) {
   els.accountSubmit.disabled = isBusy;
   els.checkPage.disabled = isBusy;
   els.sendSuggestion.disabled = isBusy;
+  els.allowAllSites.disabled = isBusy;
+  els.allowThisSite.disabled = isBusy;
+  els.denyConsent.disabled = isBusy;
   if (label) setStatus(label);
 }
 
@@ -57,6 +71,11 @@ function tabHostname(tab) {
   } catch {
     return '';
   }
+}
+
+function hasConsentForTab(tab) {
+  const host = tabHostname(tab);
+  return Boolean(currentState?.globalConsent || (host && currentState?.domainConsent?.[host] === true));
 }
 
 async function ensureContent(tabId) {
@@ -120,29 +139,72 @@ async function loadState() {
 }
 
 async function analyseThisPurchase() {
-  setStatus('Preparing source check...');
+  setStatus('');
+  setActionStatus('Preparing source check...');
   els.analysisFailure.hidden = true;
   els.suggestSitePanel.hidden = true;
+  els.popupConsentPanel.hidden = true;
   const tab = await activeTab();
-  await ensureContent(tab.id);
-  const response = await chrome.tabs.sendMessage(tab.id, { type: 'FC_START_ANALYZE' });
-  if (!response?.ok) {
-    if (response?.reason === 'consent_declined') {
-      setStatus('No page text was sent.', 'success');
-      await loadState();
+  analysisTab = tab;
+
+  if (!hasConsentForTab(tab)) {
+    els.popupConsentPanel.hidden = false;
+    setActionStatus('Choose whether FanCheck can send a redacted snippet for this page.');
+    return;
+  }
+
+  await runConfirmedAnalysis(tab);
+}
+
+async function runConfirmedAnalysis(tab) {
+  const originalLabel = els.checkPage.textContent;
+  setBusy(true);
+  els.checkPage.textContent = 'Analysing...';
+  setActionStatus('Analysing with current public sources...');
+  try {
+    await ensureContent(tab.id);
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'FC_START_ANALYZE_CONFIRMED' });
+    if (!response?.ok) {
+      els.analysisFailure.hidden = false;
+      setActionStatus('FanCheck could not analyse this page yet.', 'error');
       return;
     }
+    setActionStatus('FanCheck overlay updated on this page.', 'success');
+    await loadState();
+  } catch (error) {
     els.analysisFailure.hidden = false;
-    throw new Error(response?.error || response?.reason || 'FanCheck could not analyse this page yet.');
+    setActionStatus('FanCheck could not analyse this page yet.', 'error');
+    setStatus(error.message || 'Source check failed.', 'error');
+  } finally {
+    setBusy(false);
+    els.checkPage.textContent = originalLabel;
   }
-  setStatus('FanCheck overlay updated on this page.', 'success');
-  await loadState();
 }
 
 function showSuggestionPanel() {
   els.suggestSitePanel.hidden = false;
   els.reportNote.focus();
   setStatus('');
+}
+
+async function grantConsent(scope) {
+  const tab = analysisTab || await activeTab();
+  const host = tabHostname(tab);
+  if (!host) throw new Error('Open an http or https page first.');
+  const message = scope === 'global'
+    ? { type: 'FC_GRANT_GLOBAL_CONSENT' }
+    : { type: 'FC_GRANT_SITE_CONSENT', hostname: host };
+  const response = await sendBackground(message);
+  if (!response?.ok) throw new Error(response?.error || 'Could not save permission.');
+  els.popupConsentPanel.hidden = true;
+  await loadState();
+  await runConfirmedAnalysis(tab);
+}
+
+async function denyConsent() {
+  els.popupConsentPanel.hidden = true;
+  setActionStatus('No page text was sent.', 'success');
+  await loadState();
 }
 
 async function sendSiteSuggestion() {
@@ -219,12 +281,16 @@ function wrap(handler) {
     try {
       await handler(event);
     } catch (error) {
+      setActionStatus(error.message || 'Something went wrong.', 'error');
       setStatus(error.message || 'Something went wrong.', 'error');
     }
   };
 }
 
 els.checkPage.addEventListener('click', wrap(analyseThisPurchase));
+els.allowAllSites.addEventListener('click', wrap(() => grantConsent('global')));
+els.allowThisSite.addEventListener('click', wrap(() => grantConsent('site')));
+els.denyConsent.addEventListener('click', wrap(denyConsent));
 els.showSuggestSite.addEventListener('click', showSuggestionPanel);
 els.sendSuggestion.addEventListener('click', wrap(sendSiteSuggestion));
 els.modeSignin.addEventListener('click', () => setAccountMode('signin'));

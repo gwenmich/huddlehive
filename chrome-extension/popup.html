@@ -19,6 +19,16 @@
     <section class="popup-section" aria-labelledby="actions-title">
       <h2 id="actions-title">This Page</h2>
       <button id="check-page" class="fancheck-btn fancheck-btn-primary fancheck-full" type="button">Analyse this purchase</button>
+      <p id="action-status" class="popup-action-status" aria-live="polite"></p>
+
+      <div id="popup-consent-panel" class="popup-callout" hidden>
+        <p>FanCheck can analyse this purchase by sending a short redacted text snippet to your FanCheck backend. Redaction is best-effort and the backend may use Anthropic for analysis.</p>
+        <div class="popup-consent-actions">
+          <button id="allow-all-sites" class="fancheck-btn fancheck-btn-primary" type="button">Allow for all sites</button>
+          <button id="allow-this-site" class="fancheck-btn fancheck-btn-primary" type="button">Allow for this site</button>
+          <button id="deny-consent" class="fancheck-btn fancheck-btn-secondary" type="button">Not now</button>
+        </div>
+      </div>
 
       <div id="analysis-failure" class="popup-callout" hidden>
         <p>FanCheck could not analyse this page yet.</p>

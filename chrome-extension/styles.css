@@ -363,6 +363,11 @@
   margin: 0 0 8px;
 }
 
+.popup-consent-actions {
+  display: grid;
+  gap: 8px;
+}
+
 .popup-suggest {
   margin-top: 10px;
 }
@@ -393,18 +398,21 @@
 }
 
 .popup-help,
-.popup-status {
+.popup-status,
+.popup-action-status {
   color: var(--fancheck-muted);
   font-size: 12px;
   line-height: 1.35;
   margin: 7px 0 0;
 }
 
-.popup-status.success {
+.popup-status.success,
+.popup-action-status.success {
   color: var(--fancheck-primary);
 }
 
-.popup-status.error {
+.popup-status.error,
+.popup-action-status.error {
   color: var(--fancheck-danger);
 }
 

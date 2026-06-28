@@ -96,6 +96,28 @@ async function getState() {
   };
 }
 
+async function grantGlobalConsent() {
+  await ensureConsentMigration();
+  await chrome.storage.local.set({
+    fancheck_privacy_consent: true,
+    fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+  });
+}
+
+async function grantSiteConsent(hostname) {
+  if (!hostname) {
+    throw new Error('No current site to allow.');
+  }
+  await ensureConsentMigration();
+  const data = await chrome.storage.local.get(['fancheck_privacy_consent_domains']);
+  const domains = data.fancheck_privacy_consent_domains || {};
+  domains[hostname] = true;
+  await chrome.storage.local.set({
+    fancheck_privacy_consent_domains: domains,
+    fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+  });
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     try {
@@ -133,6 +155,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       if (message?.type === 'FC_SET_BACKEND_URL') {
         sendResponse({ ok: true, data: { backendUrl: DEFAULT_BACKEND_URL } });
+        return;
+      }
+      if (message?.type === 'FC_GRANT_GLOBAL_CONSENT') {
+        await grantGlobalConsent();
+        sendResponse({ ok: true });
+        return;
+      }
+      if (message?.type === 'FC_GRANT_SITE_CONSENT') {
+        await grantSiteConsent(message.hostname);
+        sendResponse({ ok: true });
         return;
       }
       if (message?.type === 'FC_REVOKE_GLOBAL_CONSENT') {

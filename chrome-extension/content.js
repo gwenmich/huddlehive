@@ -284,9 +284,10 @@
     return chrome.runtime.sendMessage(message);
   }
 
-  async function analyzeCurrentPage(source = 'overlay') {
+  async function analyzeCurrentPage(source = 'overlay', options = {}) {
     const scan = scanPage();
-    const allowed = await requestConsent(scan.hostname);
+    const shouldRequestConsent = options.requestConsent !== false;
+    const allowed = shouldRequestConsent ? await requestConsent(scan.hostname) : true;
     if (!allowed) {
       renderOverlay({ mode: 'local', scan, message: 'No page text was sent.' });
       return { ok: false, reason: 'consent_declined' };
@@ -561,6 +562,10 @@
     }
     if (message?.type === 'FC_START_ANALYZE') {
       analyzeCurrentPage('popup').then(sendResponse);
+      return true;
+    }
+    if (message?.type === 'FC_START_ANALYZE_CONFIRMED') {
+      analyzeCurrentPage('popup', { requestConsent: false }).then(sendResponse);
       return true;
     }
     if (message?.type === 'FC_RENDER_ANALYSIS') {
