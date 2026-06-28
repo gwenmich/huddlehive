@@ -3,30 +3,30 @@
 
     const tickerItems = [
         {
-            action: 'You logged',
-            count: '4,320 mins streamed.',
+            action: 'You streamed',
+            count: '4,320 mins.',
             impact: 'Artists made £0.64.',
         },
         {
-            action: 'You logged',
-            count: '12 albums bought.',
+            action: 'You bought',
+            count: '12 albums.',
             impact: 'Artists made £96.',
         },
         {
-            action: 'You logged',
-            count: '8 concerts attended.',
+            action: 'You attended',
+            count: '8 concerts.',
             impact: 'Artists made £560.',
         },
         {
-            action: 'You logged',
-            count: '3 merch drops bought.',
+            action: 'You bought',
+            count: '3 merch drops.',
             impact: 'Artists made £90.',
         },
     ];
 
     const initHeroTicker = () => {
         const ticker = document.querySelector('.hero-ticker');
-        if (!ticker || prefersReducedMotion) return;
+        if (!ticker) return;
 
         const action = ticker.querySelector('[data-hero-ticker-action]');
         const count = ticker.querySelector('[data-hero-ticker-count]');
@@ -37,16 +37,25 @@
 
         window.setInterval(() => {
             activeIndex = (activeIndex + 1) % tickerItems.length;
+
+            if (prefersReducedMotion) {
+                updateTicker(tickerItems[activeIndex]);
+                return;
+            }
+
             ticker.classList.add('is-changing');
 
             window.setTimeout(() => {
-                const item = tickerItems[activeIndex];
-                action.textContent = item.action;
-                count.textContent = item.count;
-                impact.textContent = item.impact;
+                updateTicker(tickerItems[activeIndex]);
                 ticker.classList.remove('is-changing');
             }, 280);
         }, 2800);
+
+        function updateTicker(item) {
+            action.textContent = item.action;
+            count.textContent = item.count;
+            impact.textContent = item.impact;
+        }
     };
 
     initHeroTicker();
