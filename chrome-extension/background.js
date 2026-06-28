@@ -68,7 +68,8 @@ async function ensureConsentMigration(data = null) {
   const current = data || await chrome.storage.local.get([
     'fancheck_consent_flow_version',
     'fancheck_privacy_consent',
-    'fancheck_privacy_consent_domains'
+    'fancheck_privacy_consent_domains',
+    'fancheck_permission_onboarding_seen'
   ]);
   if (current.fancheck_consent_flow_version === CONSENT_FLOW_VERSION) {
     return current;
@@ -84,6 +85,7 @@ async function getState() {
     'fancheck_consent_flow_version',
     'fancheck_privacy_consent',
     'fancheck_privacy_consent_domains',
+    'fancheck_permission_onboarding_seen',
     'fancheck_last_detail_url'
   ]);
   const migrated = await ensureConsentMigration(data);
@@ -92,6 +94,7 @@ async function getState() {
     backendUrl: DEFAULT_BACKEND_URL,
     globalConsent: migrated.fancheck_privacy_consent === true,
     domainConsent: migrated.fancheck_privacy_consent_domains || {},
+    permissionOnboardingSeen: data.fancheck_permission_onboarding_seen === true,
     lastDetailUrl: data.fancheck_last_detail_url || null
   };
 }
@@ -100,6 +103,7 @@ async function grantGlobalConsent() {
   await ensureConsentMigration();
   await chrome.storage.local.set({
     fancheck_privacy_consent: true,
+    fancheck_permission_onboarding_seen: true,
     fancheck_consent_flow_version: CONSENT_FLOW_VERSION
   });
 }
@@ -114,6 +118,15 @@ async function grantSiteConsent(hostname) {
   domains[hostname] = true;
   await chrome.storage.local.set({
     fancheck_privacy_consent_domains: domains,
+    fancheck_permission_onboarding_seen: true,
+    fancheck_consent_flow_version: CONSENT_FLOW_VERSION
+  });
+}
+
+async function declinePermission() {
+  await ensureConsentMigration();
+  await chrome.storage.local.set({
+    fancheck_permission_onboarding_seen: true,
     fancheck_consent_flow_version: CONSENT_FLOW_VERSION
   });
 }
@@ -164,6 +177,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       if (message?.type === 'FC_GRANT_SITE_CONSENT') {
         await grantSiteConsent(message.hostname);
+        sendResponse({ ok: true });
+        return;
+      }
+      if (message?.type === 'FC_DECLINE_PERMISSION') {
+        await declinePermission();
         sendResponse({ ok: true });
         return;
       }

@@ -22,9 +22,9 @@
       <p id="action-status" class="popup-action-status" aria-live="polite"></p>
 
       <div id="popup-consent-panel" class="popup-callout" hidden>
-        <p>FanCheck can analyse this purchase by sending a short redacted text snippet to your FanCheck backend. Redaction is best-effort and the backend may use Anthropic for analysis.</p>
+        <p id="permission-copy" class="popup-permission-copy">FanCheck checks pages locally in your browser and may surface on supported music purchase pages. Analysis only runs when you click Analyse this purchase, which may send a redacted snippet to FanCheck and may use Anthropic. You can change this later.</p>
         <div class="popup-consent-actions">
-          <button id="allow-all-sites" class="fancheck-btn fancheck-btn-primary" type="button">Allow for all sites</button>
+          <button id="allow-all-sites" class="fancheck-btn fancheck-btn-primary" type="button">Allow FanCheck</button>
           <button id="allow-this-site" class="fancheck-btn fancheck-btn-primary" type="button">Allow for this site</button>
           <button id="deny-consent" class="fancheck-btn fancheck-btn-secondary" type="button">Not now</button>
         </div>
@@ -62,10 +62,12 @@
 
     <section class="popup-section" aria-labelledby="privacy-title">
       <h2 id="privacy-title">Privacy</h2>
-      <p id="consent-status" class="popup-help">Source checks: ask first</p>
+      <p id="consent-status" class="popup-help">FanCheck permission: not enabled</p>
+      <button id="enable-global" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Enable FanCheck</button>
+      <button id="enable-site" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Enable for this site</button>
       <button id="revoke-global" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Revoke all permissions</button>
       <button id="revoke-site" class="fancheck-btn fancheck-btn-secondary fancheck-full" type="button">Revoke permissions for this site</button>
-      <p class="popup-help">Page text is sent only after consent, redacted first, and may be processed by Anthropic for analysis. Redaction is best-effort.</p>
+      <p class="popup-help">FanCheck checks pages locally first. Redacted page text is sent only after permission and an Analyse this purchase click.</p>
     </section>
 
     <section class="popup-section">

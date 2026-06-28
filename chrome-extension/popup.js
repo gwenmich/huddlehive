@@ -22,6 +22,8 @@ const els = {
   modeRegister: document.getElementById('mode-register'),
   disconnect: document.getElementById('disconnect'),
   consentStatus: document.getElementById('consent-status'),
+  enableGlobal: document.getElementById('enable-global'),
+  enableSite: document.getElementById('enable-site'),
   revokeGlobal: document.getElementById('revoke-global'),
   revokeSite: document.getElementById('revoke-site'),
   openFancheck: document.getElementById('open-fancheck'),
@@ -32,6 +34,7 @@ let currentTab = null;
 let currentState = null;
 let accountMode = 'signin';
 let analysisTab = null;
+let permissionPanelPurpose = 'onboarding';
 
 function setStatus(message, type = '') {
   els.statusMessage.textContent = message || '';
@@ -50,6 +53,8 @@ function setBusy(isBusy, label) {
   els.allowAllSites.disabled = isBusy;
   els.allowThisSite.disabled = isBusy;
   els.denyConsent.disabled = isBusy;
+  els.enableGlobal.disabled = isBusy;
+  els.enableSite.disabled = isBusy;
   if (label) setStatus(label);
 }
 
@@ -76,6 +81,13 @@ function tabHostname(tab) {
 function hasConsentForTab(tab) {
   const host = tabHostname(tab);
   return Boolean(currentState?.globalConsent || (host && currentState?.domainConsent?.[host] === true));
+}
+
+function consentScopeForTab(tab) {
+  const host = tabHostname(tab);
+  if (currentState?.globalConsent) return 'global';
+  if (host && currentState?.domainConsent?.[host] === true) return 'site';
+  return null;
 }
 
 async function ensureContent(tabId) {
@@ -116,14 +128,27 @@ function renderConsentState() {
   const host = currentTab ? tabHostname(currentTab) : '';
   const siteConsent = host && currentState?.domainConsent?.[host] === true;
   if (currentState?.globalConsent) {
-    els.consentStatus.textContent = 'Source checks: allowed for all sites';
+    els.consentStatus.textContent = 'FanCheck permission: enabled for supported pages';
   } else if (siteConsent) {
-    els.consentStatus.textContent = `Source checks: allowed for ${host}`;
+    els.consentStatus.textContent = `FanCheck permission: enabled for ${host}`;
   } else {
-    els.consentStatus.textContent = 'Source checks: ask first';
+    els.consentStatus.textContent = 'FanCheck permission: not enabled';
   }
+  els.enableGlobal.disabled = currentState?.globalConsent === true;
+  els.enableSite.disabled = !host || siteConsent;
   els.revokeGlobal.disabled = !currentState?.globalConsent && !Object.keys(currentState?.domainConsent || {}).length;
   els.revokeSite.disabled = !siteConsent;
+}
+
+function showPermissionPanel(purpose) {
+  permissionPanelPurpose = purpose;
+  els.popupConsentPanel.hidden = false;
+  els.allowThisSite.hidden = purpose === 'onboarding';
+  if (purpose === 'analysis') {
+    setActionStatus('Enable FanCheck to analyse this supported purchase page.');
+  } else {
+    setActionStatus('Allow FanCheck to surface on supported music purchase pages.');
+  }
 }
 
 async function loadState() {
@@ -136,6 +161,9 @@ async function loadState() {
   els.disconnect.disabled = !currentState.connected;
   els.openDetail.disabled = !currentState.lastDetailUrl;
   renderConsentState();
+  if (!currentState.permissionOnboardingSeen && !currentState.globalConsent) {
+    showPermissionPanel('onboarding');
+  }
 }
 
 async function analyseThisPurchase() {
@@ -144,12 +172,17 @@ async function analyseThisPurchase() {
   els.analysisFailure.hidden = true;
   els.suggestSitePanel.hidden = true;
   els.popupConsentPanel.hidden = true;
-  const tab = await activeTab();
+  const { tab, scan } = await scanCurrentTab();
   analysisTab = tab;
 
+  if (!scan.preflight?.shouldAnalyze) {
+    els.analysisFailure.hidden = false;
+    setActionStatus('FanCheck could not analyse this page yet.', 'error');
+    return;
+  }
+
   if (!hasConsentForTab(tab)) {
-    els.popupConsentPanel.hidden = false;
-    setActionStatus('Choose whether FanCheck can send a redacted snippet for this page.');
+    showPermissionPanel('analysis');
     return;
   }
 
@@ -188,9 +221,13 @@ function showSuggestionPanel() {
 }
 
 async function grantConsent(scope) {
-  const tab = analysisTab || await activeTab();
-  const host = tabHostname(tab);
-  if (!host) throw new Error('Open an http or https page first.');
+  let tab = analysisTab;
+  let host = tab ? tabHostname(tab) : '';
+  if (scope === 'site' || permissionPanelPurpose === 'analysis') {
+    tab = analysisTab || await activeTab();
+    host = tabHostname(tab);
+    if (!host) throw new Error('Open an http or https page first.');
+  }
   const message = scope === 'global'
     ? { type: 'FC_GRANT_GLOBAL_CONSENT' }
     : { type: 'FC_GRANT_SITE_CONSENT', hostname: host };
@@ -198,12 +235,23 @@ async function grantConsent(scope) {
   if (!response?.ok) throw new Error(response?.error || 'Could not save permission.');
   els.popupConsentPanel.hidden = true;
   await loadState();
-  await runConfirmedAnalysis(tab);
+  if (permissionPanelPurpose === 'analysis') {
+    await runConfirmedAnalysis(tab);
+  } else {
+    setActionStatus('FanCheck permission enabled.', 'success');
+  }
+}
+
+async function enablePermission(scope) {
+  permissionPanelPurpose = 'preference';
+  await grantConsent(scope);
 }
 
 async function denyConsent() {
+  const response = await sendBackground({ type: 'FC_DECLINE_PERMISSION' });
+  if (!response?.ok) throw new Error(response?.error || 'Could not update permission.');
   els.popupConsentPanel.hidden = true;
-  setActionStatus('No page text was sent.', 'success');
+  setActionStatus('FanCheck will not surface automatically.', 'success');
   await loadState();
 }
 
@@ -291,6 +339,8 @@ els.checkPage.addEventListener('click', wrap(analyseThisPurchase));
 els.allowAllSites.addEventListener('click', wrap(() => grantConsent('global')));
 els.allowThisSite.addEventListener('click', wrap(() => grantConsent('site')));
 els.denyConsent.addEventListener('click', wrap(denyConsent));
+els.enableGlobal.addEventListener('click', wrap(() => enablePermission('global')));
+els.enableSite.addEventListener('click', wrap(() => enablePermission('site')));
 els.showSuggestSite.addEventListener('click', showSuggestionPanel);
 els.sendSuggestion.addEventListener('click', wrap(sendSiteSuggestion));
 els.modeSignin.addEventListener('click', () => setAccountMode('signin'));

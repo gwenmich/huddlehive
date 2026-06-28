@@ -25,6 +25,19 @@ MAX_REDACTED_TEXT_CHARS = 2000
 MAX_DETECTED_PRICES = 20
 MAX_CONTINUATIONS = 2
 MAX_REPORT_NOTE_CHARS = 500
+PREFLIGHT_VERSION = 1
+PREFLIGHT_MIN_SCORE = 60
+PREFLIGHT_ALLOWED_BANDS = {"HIGH", "MEDIUM"}
+PREFLIGHT_POSITIVE_CATEGORIES = {
+    "known_host",
+    "url_transaction",
+    "title_music",
+    "text_music",
+    "text_transaction",
+    "price",
+    "music_merch",
+}
+PREFLIGHT_ALLOWED_CATEGORIES = PREFLIGHT_POSITIVE_CATEGORIES | {"negative_path"}
 
 _analysis_cache = {}
 _rate_limits = {}
@@ -158,6 +171,114 @@ def _safe_string(value, max_len=500):
     return str(value).strip()[:max_len]
 
 
+def _safe_code_list(value, allowed=None, max_items=20, max_len=80):
+    if not isinstance(value, list):
+        return []
+    cleaned = []
+    for item in value:
+        code = re.sub(r"[^A-Za-z0-9_.:-]", "_", str(item or ""))[:max_len]
+        if not code:
+            continue
+        if allowed is not None and code not in allowed:
+            continue
+        if code not in cleaned:
+            cleaned.append(code)
+        if len(cleaned) >= max_items:
+            break
+    return cleaned
+
+
+def _price_bucket(payload):
+    amount, _currency = _first_price(payload.get("detectedPrices"))
+    if amount is None:
+        return "unknown"
+    if amount < 25:
+        return "under_25"
+    if amount < 50:
+        return "25_49"
+    if amount < 100:
+        return "50_99"
+    if amount < 250:
+        return "100_249"
+    return "250_plus"
+
+
+def _sanitize_preflight(value):
+    if not isinstance(value, dict):
+        return None
+    try:
+        version = int(value.get("version"))
+    except (TypeError, ValueError):
+        version = None
+    try:
+        score = int(value.get("score"))
+    except (TypeError, ValueError):
+        score = 0
+    score = max(0, min(score, 100))
+    band = _safe_string(value.get("band"), 20)
+    categories = _safe_code_list(value.get("matchedSignalCategories"), PREFLIGHT_ALLOWED_CATEGORIES)
+    return {
+        "version": version,
+        "score": score,
+        "band": band,
+        "reasons": _safe_code_list(value.get("reasons")),
+        "matchedSignals": _safe_code_list(value.get("matchedSignals")),
+        "matchedSignalCategories": categories,
+        "shouldAnalyze": value.get("shouldAnalyze") is True,
+    }
+
+
+def _safe_failure(reason):
+    return jsonify({
+        "error": "FanCheck could not analyse this page yet.",
+        "reason": reason,
+        "anthropic_skipped": True,
+    }), 400
+
+
+def _validate_analysis_gate(payload):
+    trigger = payload.get("trigger")
+    if trigger != "user_click":
+        payload["redactedText"] = ""
+        return None, _safe_failure("trigger_missing")
+
+    consent = payload.get("consent") if isinstance(payload.get("consent"), dict) else None
+    if not consent or consent.get("confirmed") is not True:
+        payload["redactedText"] = ""
+        return None, _safe_failure("consent_missing")
+
+    preflight = _sanitize_preflight(payload.get("preflight"))
+    if not preflight:
+        payload["redactedText"] = ""
+        return None, _safe_failure("preflight_missing")
+
+    positive_categories = [
+        category for category in preflight["matchedSignalCategories"]
+        if category in PREFLIGHT_POSITIVE_CATEGORIES
+    ]
+    if (
+        preflight["version"] != PREFLIGHT_VERSION
+        or preflight["shouldAnalyze"] is not True
+        or preflight["band"] not in PREFLIGHT_ALLOWED_BANDS
+        or preflight["score"] < PREFLIGHT_MIN_SCORE
+        or len(positive_categories) < 2
+    ):
+        payload["redactedText"] = ""
+        return preflight, _safe_failure("preflight_failed")
+
+    scope = _safe_string(consent.get("scope"), 20)
+    if scope not in {"site", "global"}:
+        payload["redactedText"] = ""
+        return preflight, _safe_failure("consent_missing")
+    payload["consent"] = {
+        "confirmed": True,
+        "scope": scope,
+        "hostname": _normalize_hostname(consent.get("hostname")),
+    }
+    payload["preflight"] = preflight
+    return preflight, None
+
+
 def _sanitize_search_context(payload, parsed):
     signals = payload.get("clientSignals") if isinstance(payload.get("clientSignals"), dict) else {}
     preferences = payload.get("preferences") if isinstance(payload.get("preferences"), dict) else {}
@@ -169,6 +290,12 @@ def _sanitize_search_context(payload, parsed):
         "known_domain": _safe_string(signals.get("knownDomain"), 120),
         "page_type_hint": _safe_string(signals.get("pageTypeHint"), 80),
         "purchase_type_hint": _safe_string(signals.get("purchaseTypeHint"), 80),
+        "coarse_price_bucket": _price_bucket(payload),
+        "preflight": {
+            "version": (payload.get("preflight") or {}).get("version"),
+            "band": (payload.get("preflight") or {}).get("band"),
+            "categories": (payload.get("preflight") or {}).get("matchedSignalCategories", [])[:10],
+        },
         "music_keywords": [str(k)[:40] for k in signals.get("musicKeywords", [])[:10]] if isinstance(signals.get("musicKeywords"), list) else [],
         "region": _safe_string(preferences.get("region"), 40),
     }
@@ -478,10 +605,14 @@ def _validate_cited_claims(result, citations, raw_result=None):
 def _cache_key(payload, parsed):
     signals = payload.get("clientSignals") if isinstance(payload.get("clientSignals"), dict) else {}
     preferences = payload.get("preferences") if isinstance(payload.get("preferences"), dict) else {}
+    preflight = payload.get("preflight") if isinstance(payload.get("preflight"), dict) else {}
     parts = [
         _normalize_hostname(parsed.hostname),
         str(signals.get("knownDomain") or ""),
         str(signals.get("purchaseTypeHint") or "unknown"),
+        str(_price_bucket(payload)),
+        str(preflight.get("version") or ""),
+        str(preflight.get("band") or ""),
         str(preferences.get("region") or ""),
     ]
     return "|".join(parts)
@@ -775,6 +906,10 @@ def analyze_extension_page():
         payload["redactedText"] = str(payload.get("redactedText") or "")[:MAX_REDACTED_TEXT_CHARS]
     if isinstance(payload.get("detectedPrices"), list) and len(payload["detectedPrices"]) > MAX_DETECTED_PRICES:
         payload["detectedPrices"] = payload["detectedPrices"][:MAX_DETECTED_PRICES]
+
+    _preflight, gate_error = _validate_analysis_gate(payload)
+    if gate_error:
+        return gate_error
 
     cache_key = _cache_key(payload, parsed)
     cached = _cache_get(cache_key)

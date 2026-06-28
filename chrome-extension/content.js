@@ -7,6 +7,10 @@
   const OVERLAY_ID = 'fancheck-overlay';
   const CONSENT_ID = 'fancheck-consent-dialog';
   const MAX_TEXT_CHARS = 2000;
+  const PREFLIGHT_TEXT_CHARS = 8000;
+  const PREFLIGHT_VERSION = 1;
+  const PREFLIGHT_PASS_SCORE = 60;
+  const AUTO_SURFACE_COOLDOWN_MS = 30 * 60 * 1000;
   const CONSENT_FLOW_VERSION = 2;
 
   const checkoutSignals = [
@@ -21,6 +25,24 @@
   const merchSignals = [
     'merch', 'merchandise', 'vinyl', 'record', 'lp', 'cd', 'cassette',
     't-shirt', 'tee', 'hoodie', 'album', 'shipping', 'size', 'variant'
+  ];
+  const musicMerchSignals = [
+    'artist', 'band', 'musician', 'tour', 'concert', 'gig', 'venue',
+    'album', 'vinyl', 'record', 'lp', 'cd', 'cassette', 'tracklist',
+    'release', 'label', 'discography', 'festival', 'presale'
+  ];
+  const urlTransactionSignals = [
+    'ticket', 'tickets', 'checkout', 'cart', 'basket', 'order', 'merch',
+    'tour', 'event', 'resale'
+  ];
+  const negativeSignals = [
+    'privacy', 'terms', 'help', 'support', 'faq', 'contact', 'account',
+    'login', 'sign in', 'settings', 'news', 'blog', 'review'
+  ];
+  const hardNegativePaths = ['privacy', 'terms', 'help', 'support', 'faq'];
+  const positivePreflightCategories = [
+    'known_host', 'url_transaction', 'title_music', 'text_music',
+    'text_transaction', 'price', 'music_merch'
   ];
   const resaleHosts = ['viagogo.com', 'stubhub.com'];
 
@@ -51,6 +73,11 @@
 
   function countMatches(haystack, needles) {
     return needles.reduce((count, needle) => count + (haystack.includes(needle) ? 1 : 0), 0);
+  }
+
+  function addUnique(list, value) {
+    const safe = text(value).replace(/[^a-z0-9_.:-]/gi, '_').slice(0, 80);
+    if (safe && !list.includes(safe) && list.length < 20) list.push(safe);
   }
 
   function detectKnownDomain() {
@@ -128,6 +155,105 @@
     return score;
   }
 
+  function bandForScore(score) {
+    if (score >= 80) return 'HIGH';
+    if (score >= 60) return 'MEDIUM';
+    if (score >= 40) return 'LOW';
+    return 'INSUFFICIENT';
+  }
+
+  function runPreflight({ pageUrl, bodyText, knownDomain, detectedPrices }) {
+    const parsed = new URL(pageUrl || window.location.href);
+    const path = lower(parsed.pathname || '/');
+    const titleText = lower(document.title || '');
+    const visibleText = lower(bodyText).slice(0, PREFLIGHT_TEXT_CHARS);
+    const combined = `${path} ${titleText} ${visibleText}`;
+    const categories = new Set();
+    const signals = [];
+    const reasons = [];
+    let score = 0;
+
+    if (knownDomain) {
+      categories.add('known_host');
+      addUnique(signals, 'known_host');
+      score += 15;
+    }
+    if (includesAny(path, urlTransactionSignals)) {
+      categories.add('url_transaction');
+      addUnique(signals, 'url_transaction');
+      score += 20;
+    }
+    if (includesAny(titleText, [...ticketSignals, ...musicMerchSignals])) {
+      categories.add('title_music');
+      addUnique(signals, 'title_music');
+      score += 15;
+    }
+    if (includesAny(visibleText, ticketSignals) || includesAny(visibleText, musicMerchSignals)) {
+      categories.add('text_music');
+      addUnique(signals, 'text_music');
+      score += 15;
+    }
+    if (includesAny(visibleText, checkoutSignals) || includesAny(visibleText, ['checkout', 'cart', 'basket', 'payment', 'order'])) {
+      categories.add('text_transaction');
+      addUnique(signals, 'text_transaction');
+      score += 15;
+    }
+    if (detectedPrices.length > 0) {
+      categories.add('price');
+      addUnique(signals, 'price_detected');
+      score += 20;
+    }
+
+    const merchCount = countMatches(combined, merchSignals);
+    const musicMerchCount = countMatches(combined, musicMerchSignals);
+    if (merchCount > 0 && musicMerchCount > 0) {
+      categories.add('music_merch');
+      addUnique(signals, 'music_merch');
+      score += 15;
+    } else if (merchCount > 0) {
+      addUnique(reasons, 'generic_merch_without_music_context');
+      score -= 10;
+    }
+
+    if (includesAny(path, hardNegativePaths)) {
+      categories.add('negative_path');
+      addUnique(signals, 'negative_path');
+      score -= 80;
+    } else if (includesAny(combined, negativeSignals)) {
+      addUnique(reasons, 'negative_context');
+      score -= 10;
+    }
+
+    const positiveCategories = [...categories].filter((category) => positivePreflightCategories.includes(category));
+    const categoryCount = positiveCategories.length;
+    score = Math.max(0, Math.min(100, score));
+    const band = bandForScore(score);
+    const shouldAnalyze = score >= PREFLIGHT_PASS_SCORE && ['HIGH', 'MEDIUM'].includes(band) && categoryCount >= 2;
+    if (!shouldAnalyze) addUnique(reasons, 'preflight_failed');
+    if (!knownDomain && categories.has('music_merch') && !(categories.has('price') && (categories.has('url_transaction') || categories.has('text_transaction')))) {
+      addUnique(reasons, 'unknown_merch_missing_transaction_signal');
+      return {
+        version: PREFLIGHT_VERSION,
+        score: Math.min(score, 59),
+        band: bandForScore(Math.min(score, 59)),
+        reasons,
+        matchedSignals: signals,
+        matchedSignalCategories: [...categories],
+        shouldAnalyze: false
+      };
+    }
+
+    return {
+      version: PREFLIGHT_VERSION,
+      score,
+      band,
+      reasons,
+      matchedSignals: signals,
+      matchedSignalCategories: [...categories],
+      shouldAnalyze
+    };
+  }
+
   function scanPage() {
     const bodyText = text(document.body?.innerText || '');
     const pageUrl = safePageUrl(window.location.href);
@@ -137,8 +263,9 @@
     const merchWords = countMatches(pageText, merchSignals);
     const checkoutWords = countMatches(pageText, checkoutSignals);
     const detectedPrices = detectPrices();
+    const preflight = runPreflight({ pageUrl, bodyText, knownDomain, detectedPrices });
     const purchaseTypeHint = merchWords > ticketWords ? 'merch' : ticketWords > 0 ? 'ticket' : 'unknown';
-    const likelyPurchase = checkoutWords > 0 && (ticketWords > 0 || merchWords > 0 || detectedPrices.length > 0);
+    const likelyPurchase = preflight.shouldAnalyze;
     const isSecondaryMarket = resaleHosts.some((domain) => hostname() === domain || hostname().endsWith(`.${domain}`));
 
     return {
@@ -147,6 +274,7 @@
       hostname: hostname(),
       knownDomain,
       likelyPurchase,
+      preflight,
       purchaseTypeHint,
       isSecondaryMarket,
       detectedPrices,
@@ -154,12 +282,17 @@
         ticketWords,
         merchWords,
         checkoutWords,
-        priceCandidates: detectedPrices.length
+        priceCandidates: detectedPrices.length,
+        preflightBand: preflight.band,
+        preflightScore: preflight.score,
+        preflightCategories: preflight.matchedSignalCategories
       },
       clientSignals: {
         knownDomain,
         pageTypeHint: checkoutWords > 0 ? 'checkout' : 'unknown',
         purchaseTypeHint,
+        preflightBand: preflight.band,
+        preflightCategories: preflight.matchedSignalCategories,
         musicKeywords: [...ticketSignals, ...merchSignals].filter((word) => pageText.includes(word)).slice(0, 12)
       }
     };
@@ -207,15 +340,20 @@
     return { fancheck_consent_flow_version: CONSENT_FLOW_VERSION };
   }
 
-  async function hasConsent(host) {
+  async function consentState(host) {
     const data = await ensureConsentMigration(await storageGet([
       'fancheck_consent_flow_version',
       'fancheck_privacy_consent',
       'fancheck_privacy_consent_domains'
     ]));
-    if (data.fancheck_privacy_consent === true) return true;
+    if (data.fancheck_privacy_consent === true) return { confirmed: true, scope: 'global', hostname: host };
     const domains = data.fancheck_privacy_consent_domains || {};
-    return domains[host] === true;
+    if (domains[host] === true) return { confirmed: true, scope: 'site', hostname: host };
+    return { confirmed: false, scope: null, hostname: host };
+  }
+
+  async function hasConsent(host) {
+    return (await consentState(host)).confirmed;
   }
 
   async function requestConsent(host) {
@@ -235,12 +373,12 @@
       const title = document.createElement('h2');
       title.textContent = 'Analyse this purchase?';
       const copy = document.createElement('p');
-      copy.textContent = 'FanCheck can analyse this purchase against current public sources by sending a short redacted text snippet to your FanCheck backend. Redaction is best-effort and may not remove every personal detail. The backend may send the redacted snippet and minimized search context to Anthropic, a third-party AI provider, for analysis.';
+      copy.textContent = 'FanCheck checks pages locally in your browser. If you click Analyse this purchase, FanCheck may send a redacted snippet to the backend and may use Anthropic. You can change permission later.';
 
       const actions = document.createElement('div');
       actions.className = 'fancheck-consent-actions';
       const buttons = [
-        ['Allow for all sites', async () => {
+        ['Allow FanCheck', async () => {
           await storageSet({
             fancheck_privacy_consent: true,
             fancheck_consent_flow_version: CONSENT_FLOW_VERSION
@@ -286,9 +424,14 @@
 
   async function analyzeCurrentPage(source = 'overlay', options = {}) {
     const scan = scanPage();
+    if (!scan.preflight?.shouldAnalyze) {
+      renderOverlay({ mode: 'error', scan, message: 'FanCheck could not analyse this page yet.' });
+      return { ok: false, reason: 'preflight_failed', preflight: scan.preflight };
+    }
     const shouldRequestConsent = options.requestConsent !== false;
     const allowed = shouldRequestConsent ? await requestConsent(scan.hostname) : true;
-    if (!allowed) {
+    const consent = await consentState(scan.hostname);
+    if (!allowed || !consent.confirmed) {
       renderOverlay({ mode: 'local', scan, message: 'No page text was sent.' });
       return { ok: false, reason: 'consent_declined' };
     }
@@ -303,6 +446,9 @@
           redactedText: redactPageText(),
           detectedPrices: scan.detectedPrices,
           clientSignals: scan.clientSignals,
+          preflight: scan.preflight,
+          consent,
+          trigger: 'user_click',
           source
         }
       });
@@ -310,7 +456,7 @@
       renderOverlay({ mode: 'analysis', scan, analysis: response.data });
       return { ok: true, data: response.data };
     } catch (error) {
-      renderOverlay({ mode: 'error', scan, message: 'Source check unavailable. Please try again later.' });
+      renderOverlay({ mode: 'error', scan, message: 'FanCheck could not analyse this page yet.' });
       return { ok: false, error: error.message };
     }
   }
@@ -397,7 +543,7 @@
 
     const footer = document.createElement('p');
     footer.className = 'fancheck-footer';
-    footer.textContent = 'We’ll ask before sending a redacted snippet.';
+    footer.textContent = 'Analysis only runs when you choose it.';
     body.append(footer);
   }
 
@@ -520,12 +666,18 @@
   }
 
   let lastScanSignature = '';
-  function maybeAutoDetect() {
+  const autoSurfaceTimes = new Map();
+  async function maybeAutoDetect() {
     const scan = scanPage();
-    const signature = `${scan.url}|${scan.likelyPurchase}|${scan.detectedPrices.length}`;
+    const consent = await consentState(scan.hostname);
+    const signature = `${scan.url}|${scan.preflight?.band}|${scan.preflight?.score}|${scan.detectedPrices.length}|${consent.confirmed}`;
     if (signature === lastScanSignature) return;
     lastScanSignature = signature;
-    if (scan.knownDomain && scan.likelyPurchase && !document.getElementById(OVERLAY_ID)) {
+    const now = Date.now();
+    const lastSurface = autoSurfaceTimes.get(signature) || 0;
+    const cooledDown = now - lastSurface > AUTO_SURFACE_COOLDOWN_MS;
+    if (scan.preflight?.shouldAnalyze && consent.confirmed && cooledDown && !document.getElementById(OVERLAY_ID)) {
+      autoSurfaceTimes.set(signature, now);
       renderOverlay({ mode: 'local', scan });
     }
   }
@@ -534,7 +686,7 @@
     let timer;
     return () => {
       clearTimeout(timer);
-      timer = setTimeout(fn, delay);
+      timer = setTimeout(() => Promise.resolve(fn()).catch(() => {}), delay);
     };
   }
 
@@ -576,10 +728,16 @@
     return false;
   });
 
-  window.FanCheckContent = { scanPage, renderOverlay, analyzeCurrentPage };
+  window.FanCheckContent = { scanPage, renderOverlay, analyzeCurrentPage, runPreflight };
 
   if (detectKnownDomain()) {
-    maybeAutoDetect();
+    maybeAutoDetect().catch(() => {});
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== 'local') return;
+      if (changes.fancheck_privacy_consent || changes.fancheck_privacy_consent_domains) {
+        maybeAutoDetect().catch(() => {});
+      }
+    });
     new MutationObserver(debounce(maybeAutoDetect, 700)).observe(document.documentElement, { childList: true, subtree: true });
     watchUrlChanges();
   }

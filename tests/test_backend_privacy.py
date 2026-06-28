@@ -26,6 +26,21 @@ def analyze_payload(redacted_text="SECRET_ORDER_TOKEN"):
         "title": "Example checkout",
         "url": "https://ticketmaster.co.uk/event/abc?order=SECRET",
         "redactedText": redacted_text,
+        "trigger": "user_click",
+        "consent": {
+            "confirmed": True,
+            "scope": "global",
+            "hostname": "ticketmaster.co.uk",
+        },
+        "preflight": {
+            "version": 1,
+            "score": 80,
+            "band": "HIGH",
+            "reasons": [],
+            "matchedSignals": ["known_host", "url_transaction", "price"],
+            "matchedSignalCategories": ["known_host", "url_transaction", "price"],
+            "shouldAnalyze": True,
+        },
         "detectedPrices": [{"amount": 120, "currency": "GBP", "label": "Order total"}],
         "clientSignals": {
             "knownDomain": "ticketmaster.co.uk",
@@ -128,6 +143,49 @@ class BackendPrivacyTests(unittest.TestCase):
         body = response.get_json()
         self.assertEqual(body["source_check_status"], "unavailable")
         self.assertFalse(body["result"]["estimate"]["available"])
+
+    def test_weak_preflight_does_not_call_anthropic(self):
+        payload = analyze_payload()
+        payload["preflight"] = {
+            "version": 1,
+            "score": 30,
+            "band": "LOW",
+            "matchedSignalCategories": ["price"],
+            "shouldAnalyze": False,
+        }
+        with patch.object(extension, "_call_anthropic") as mocked:
+            response = self.client.post("/extension/analyze", json=payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["reason"], "preflight_failed")
+        self.assertTrue(response.get_json()["anthropic_skipped"])
+        mocked.assert_not_called()
+
+    def test_missing_preflight_does_not_call_anthropic(self):
+        payload = analyze_payload()
+        payload.pop("preflight")
+        with patch.object(extension, "_call_anthropic") as mocked:
+            response = self.client.post("/extension/analyze", json=payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["reason"], "preflight_missing")
+        mocked.assert_not_called()
+
+    def test_missing_consent_metadata_does_not_call_anthropic(self):
+        payload = analyze_payload()
+        payload.pop("consent")
+        with patch.object(extension, "_call_anthropic") as mocked:
+            response = self.client.post("/extension/analyze", json=payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["reason"], "consent_missing")
+        mocked.assert_not_called()
+
+    def test_missing_trigger_metadata_does_not_call_anthropic(self):
+        payload = analyze_payload()
+        payload.pop("trigger")
+        with patch.object(extension, "_call_anthropic") as mocked:
+            response = self.client.post("/extension/analyze", json=payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["reason"], "trigger_missing")
+        mocked.assert_not_called()
 
     def test_daily_cache_miss_fresh_and_stale(self):
         calls = [
