@@ -1,4 +1,5 @@
 from routes.spotify import get_valid_token
+from flask import Blueprint, jsonify, current_app
 
 import requests
 from flask import Blueprint, jsonify
@@ -20,7 +21,27 @@ def spotify_get(endpoint, token):
         f"{SPOTIFY_API_BASE}{endpoint}",
         headers={"Authorization": f"Bearer {token}"}
     )
-    return response.json()
+
+    if not response.ok:
+        current_app.logger.error(
+            "Spotify API error: status=%s body=%r",
+            response.status_code,
+            response.text[:500],
+        )
+        return {"items": []}
+
+    if not response.text:
+        return {"items": []}
+
+    try:
+        return response.json()
+    except ValueError:
+        current_app.logger.error(
+            "Spotify non-JSON: status=%s body=%r",
+            response.status_code,
+            response.text[:500],
+        )
+        return {"items": []}
 
 
 def get_ethical_links(artist_name):
@@ -87,7 +108,7 @@ def get_report():
             "name": artist["name"],
             "popularity_score": artist["popularity"],
             "estimated_streams_from_you": estimated_streams,
-            "estimated_earnings_from_you_usd": estimated_earnings,
+            "estimated_earnings_from_you_gbp": estimated_earnings,
             "image": artist["images"][0]["url"] if artist["images"] else None,
             "spotify_url": artist["external_urls"]["spotify"],
             "ethical_alternatives": ethical_links
