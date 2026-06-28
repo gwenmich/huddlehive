@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -15,7 +15,7 @@
 
   <header class="site-header">
     <nav class="nav" aria-label="Main navigation">
-      <a href="/pages/auth.html" class="nav-logo" aria-label="FanCheck home">
+      <a href="/" class="nav-logo" aria-label="FanCheck home">
         <img class="nav-logo-mark" src="../assets/fancheck-logo.svg" alt="" width="28" height="28">
         <span>FanCheck</span>
       </a>
@@ -28,7 +28,7 @@
 
   <main class="dashboard-main">
 
-    <!-- Spotify connect gate -->
+    <!-- ── Spotify connect gate (shown until Spotify is linked) ── -->
     <section id="spotify-gate" class="gate" aria-labelledby="gate-heading" hidden>
       <div class="gate-inner">
         <span class="eyebrow">Step 2 of 2</span>
@@ -40,34 +40,22 @@
       </div>
     </section>
 
-    <!-- Spotify connect failed -->
-    <section id="connect-error" class="gate" aria-labelledby="connect-error-heading" hidden>
-      <div class="gate-inner gate-error">
-        <span class="eyebrow">Connection failed</span>
-        <h1 id="connect-error-heading" class="gate-title">Spotify connection failed</h1>
-        <p id="connect-error-message" class="gate-desc">We couldn't complete your Spotify connection. Please try again.</p>
-        <button id="btn-spotify-retry" class="btn-primary btn-spotify-connect" type="button">
-          Try again
-        </button>
-      </div>
-    </section>
-
-    <!-- Loading -->
+    <!-- ── Loading state ── -->
     <section id="loading-state" class="loading-state" aria-live="polite" aria-label="Loading your report">
       <div class="spinner" aria-hidden="true"></div>
       <p>Building your report…</p>
     </section>
 
-    <!-- Error -->
+    <!-- ── Error state ── -->
     <section id="error-state" class="error-state" hidden aria-live="assertive">
       <p id="error-message" class="error-message"></p>
       <button id="btn-retry" class="btn-secondary" type="button">Try again</button>
     </section>
 
-    <!-- Report -->
+    <!-- ── Report (hidden until data loads) ── -->
     <div id="report" class="report" hidden>
 
-      <!-- Summary -->
+      <!-- Summary band -->
       <section class="summary-band" aria-labelledby="summary-heading">
         <header class="summary-header">
           <h1 id="summary-heading" class="summary-title">Your monthly breakdown</h1>
@@ -104,7 +92,7 @@
         </ul>
       </section>
 
-      <!-- Payout comparison — values filled by dashboard.js, NOT hardcoded -->
+      <!-- Payout comparison -->
       <section class="compare-section" aria-labelledby="compare-heading">
         <header class="section-header">
           <span class="eyebrow">Not all listening is equal</span>
@@ -116,34 +104,34 @@
             <div class="payout-bar-wrap" role="meter" aria-label="Spotify payout">
               <div class="payout-bar bar-spotify" style="--w:35%"></div>
             </div>
-            <output id="rate-spotify" class="payout-rate">—</output>
+            <output id="rate-spotify" class="payout-rate">£0.0035<small>/stream</small></output>
           </li>
           <li class="payout-row">
             <span class="payout-platform">Apple Music</span>
             <div class="payout-bar-wrap" role="meter" aria-label="Apple Music payout">
               <div class="payout-bar bar-apple" style="--w:60%"></div>
             </div>
-            <output id="rate-apple" class="payout-rate">—</output>
+            <output id="rate-apple" class="payout-rate">£0.006<small>/stream</small></output>
           </li>
           <li class="payout-row">
             <span class="payout-platform">Tidal</span>
             <div class="payout-bar-wrap" role="meter" aria-label="Tidal payout">
               <div class="payout-bar bar-tidal" style="--w:100%"></div>
             </div>
-            <output id="rate-tidal" class="payout-rate">—</output>
+            <output id="rate-tidal" class="payout-rate">£0.010<small>/stream</small></output>
           </li>
           <li class="payout-row payout-row-bandcamp">
             <span class="payout-platform">Bandcamp</span>
             <div class="payout-bar-wrap" role="meter" aria-label="Bandcamp payout">
               <div class="payout-bar bar-bandcamp" style="--w:100%"></div>
             </div>
-            <output id="rate-bandcamp" class="payout-rate payout-rate-green">—</output>
+            <output id="rate-bandcamp" class="payout-rate payout-rate-green">82%<small>of sale to artist</small></output>
           </li>
         </ul>
         <p id="compare-note" class="compare-note"></p>
       </section>
 
-    </div>
+    </div><!-- /report -->
 
   </main>
 
