@@ -1,157 +1,126 @@
 /**
- * auth.js — FanCheck authentication page
- * Tab switching, form validation, backend submission.
+ * auth.js — FanCheck login & register
  */
-
 import { login, register, saveToken, isLoggedIn } from './api.js';
 
-// Redirect if already authenticated
-if (isLoggedIn()) {
-  window.location.replace('../pages/dashboard.html');
-}
+document.addEventListener('DOMContentLoaded', () => {
 
-// ── Elements ─────────────────────────────────────────────────────────
-const tabLogin  = document.getElementById('tab-login');
-const tabSignup = document.getElementById('tab-signup');
-const formLogin  = document.getElementById('form-login');
-const formSignup = document.getElementById('form-signup');
+  // Already logged in → skip straight to dashboard
+  if (isLoggedIn()) {
+    window.location.replace('../pages/dashboard.html');
+    return;
+  }
+
+  // Show a banner if we were sent here because the session expired
+  const reason = new URLSearchParams(window.location.search).get('reason');
+  if (reason) {
+    const messages = {
+      session_expired:  'Your session expired. Please log in again.',
+      session_required: 'Please log in to continue.',
+      invalid_token:    'Your login token was invalid. Please log in again.',
+      user_not_found:   'Account not found. Please log in.',
+    };
+    const banner = document.getElementById('session-banner');
+    if (banner) {
+      banner.textContent = messages[reason] || 'Please log in to continue.';
+      banner.removeAttribute('hidden');
+    }
+  }
+
+  // If URL has #signup, switch to register tab immediately
+  if (window.location.hash === '#signup') switchTab('signup');
+
+  // Tab buttons
+  document.getElementById('tab-login') ?.addEventListener('click', () => switchTab('login'));
+  document.getElementById('tab-signup')?.addEventListener('click', () => switchTab('signup'));
+
+  // Form submissions
+  document.getElementById('form-login') ?.addEventListener('submit', handleLogin);
+  document.getElementById('form-signup')?.addEventListener('submit', handleRegister);
+});
 
 // ── Tab switching ─────────────────────────────────────────────────────
-function showTab(tab) {
+function switchTab(tab) {
   const isLogin = tab === 'login';
-
-  tabLogin.setAttribute('aria-selected',  String(isLogin));
-  tabSignup.setAttribute('aria-selected', String(!isLogin));
-
-  if (isLogin) {
-    formLogin.removeAttribute('hidden');
-    formSignup.setAttribute('hidden', '');
-  } else {
-    formSignup.removeAttribute('hidden');
-    formLogin.setAttribute('hidden', '');
-  }
-
-  history.replaceState(null, '', isLogin ? '#login' : '#signup');
-  clearErrors();
-}
-
-tabLogin.addEventListener('click',  () => showTab('login'));
-tabSignup.addEventListener('click', () => showTab('signup'));
-
-// Initialise from URL hash (supports direct links to #signup)
-showTab(window.location.hash === '#signup' ? 'signup' : 'login');
-
-// ── Toast helper ──────────────────────────────────────────────────────
-function showToast(message, type = 'error') {
-  let toast = document.querySelector('.toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = message;
-  toast.className = `toast ${type}`;
-  // Force reflow so the transition fires even when reusing the element
-  void toast.offsetWidth;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3500);
-}
-
-// ── Inline form error ─────────────────────────────────────────────────
-function showError(formEl, message) {
-  let errEl = formEl.querySelector('.form-error');
-  if (!errEl) {
-    errEl = document.createElement('p');
-    errEl.className = 'form-error';
-    errEl.setAttribute('role', 'alert');
-    // Insert before the first field, after any existing content
-    formEl.insertBefore(errEl, formEl.firstChild);
-  }
-  errEl.textContent = message;
-  errEl.removeAttribute('hidden');
-}
-
-function clearErrors() {
-  document.querySelectorAll('.form-error').forEach(el => {
-    el.setAttribute('hidden', '');
-    el.textContent = '';
-  });
-}
-
-// ── Loading state ─────────────────────────────────────────────────────
-function setLoading(btn, isLoading) {
-  btn.disabled = isLoading;
-  if (!btn.dataset.label) btn.dataset.label = btn.textContent;
-  btn.textContent = isLoading ? 'Please wait…' : btn.dataset.label;
+  document.getElementById('form-login') ?.toggleAttribute('hidden', !isLogin);
+  document.getElementById('form-signup')?.toggleAttribute('hidden',  isLogin);
+  document.getElementById('tab-login') ?.setAttribute('aria-selected', String( isLogin));
+  document.getElementById('tab-signup')?.setAttribute('aria-selected', String(!isLogin));
+  clearError();
 }
 
 // ── Login ─────────────────────────────────────────────────────────────
-formLogin.addEventListener('submit', async (e) => {
+async function handleLogin(e) {
   e.preventDefault();
-  clearErrors();
+  const email    = document.getElementById('login-email')   ?.value.trim();
+  const password = document.getElementById('login-password')?.value;
 
-  const email    = formLogin.querySelector('[name="email"]').value.trim();
-  const password = formLogin.querySelector('[name="password"]').value;
-  const btn      = formLogin.querySelector('button[type="submit"]');
+  if (!email || !password) return showError('Please fill in your email and password.');
 
-  if (!email || !password) {
-    showError(formLogin, 'Please fill in both fields.');
-    return;
-  }
-
-  setLoading(btn, true);
-  const { ok, data } = await login(email, password);
-  setLoading(btn, false);
-
-  if (ok && data.token) {
-    saveToken(data.token);
-    window.location.href = '../pages/dashboard.html';
-  } else {
-    showError(formLogin, data.message || 'Incorrect email or password.');
-    showToast(data.message || 'Login failed', 'error');
-  }
-});
-
-// ── Register ──────────────────────────────────────────────────────────
-formSignup.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  clearErrors();
-
-  const email    = formSignup.querySelector('[name="email"]').value.trim();
-  const password = formSignup.querySelector('[name="password"]').value;
-  const confirm  = formSignup.querySelector('[name="confirm-password"]').value;
-  const btn      = formSignup.querySelector('button[type="submit"]');
-
-  if (!email || !password || !confirm) {
-    showError(formSignup, 'Please fill in all fields.');
-    return;
-  }
-  if (password !== confirm) {
-    showError(formSignup, 'Passwords do not match.');
-    return;
-  }
-  if (password.length < 8) {
-    showError(formSignup, 'Password must be at least 8 characters.');
-    return;
-  }
-
-  setLoading(btn, true);
-  const { ok, data } = await register(email, password);
-
-  if (ok) {
-    // Auto-login immediately after registration
-    const loginResult = await login(email, password);
-    setLoading(btn, false);
-    if (loginResult.ok && loginResult.data.token) {
-      saveToken(loginResult.data.token);
+  setBusy('form-login', true, 'Logging in…');
+  try {
+    const { ok, data } = await login(email, password);
+    if (ok && data.token) {
+      saveToken(data.token);
       window.location.href = '../pages/dashboard.html';
     } else {
-      showTab('login');
-      showToast('Account created — please log in.', 'success');
+      showError(data.message || data.error || 'Login failed. Check your email and password.');
     }
-  } else {
-    setLoading(btn, false);
-    showError(formSignup, data.message || 'Registration failed. That email may already be in use.');
-    showToast(data.message || 'Registration failed', 'error');
+  } catch {
+    showError('Cannot reach the server. Make sure python3 app.py is running.');
+  } finally {
+    setBusy('form-login', false, 'Log in');
   }
-});
+}
+
+// ── Register ──────────────────────────────────────────────────────────
+async function handleRegister(e) {
+  e.preventDefault();
+  const email    = document.getElementById('signup-email')   ?.value.trim();
+  const password = document.getElementById('signup-password')?.value;
+  const confirm  = document.getElementById('signup-confirm') ?.value;
+
+  if (!email || !password || !confirm) return showError('Please fill in all fields.');
+  if (password.length < 8)             return showError('Password must be at least 8 characters.');
+  if (password !== confirm)            return showError('Passwords do not match.');
+
+  setBusy('form-signup', true, 'Creating account…');
+  try {
+    const { ok, data } = await register(email, password);
+    if (ok) {
+      // Auto-login immediately after registering
+      const loginResult = await login(email, password);
+      if (loginResult.ok && loginResult.data.token) {
+        saveToken(loginResult.data.token);
+        window.location.href = '../pages/dashboard.html';
+      } else {
+        // Registration worked but auto-login failed — just show login tab
+        showError('Account created! Please log in.');
+        switchTab('login');
+        document.getElementById('login-email').value = email;
+      }
+    } else {
+      showError(data.message || data.error || 'Registration failed. Try a different email.');
+    }
+  } catch {
+    showError('Cannot reach the server. Make sure python3 app.py is running.');
+  } finally {
+    setBusy('form-signup', false, 'Create account');
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  if (el) { el.textContent = msg; el.removeAttribute('hidden'); }
+}
+
+function clearError() {
+  const el = document.getElementById('auth-error');
+  if (el) { el.textContent = ''; el.setAttribute('hidden', ''); }
+}
+
+function setBusy(formId, busy, label) {
+  const btn = document.querySelector(`#${formId} button[type="submit"]`);
+  if (btn) { btn.disabled = busy; btn.textContent = label; }
+}

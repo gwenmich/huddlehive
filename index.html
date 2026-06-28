@@ -3,18 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FanCheck: make your music spend smarter</title>
-    <meta name="description" content="FanCheck helps you spend your time and money smarter so you can support your favourite artists">
-    <meta property="og:title" content="FanCheck: make your music spend smarter">
-    <meta property="og:description" content="FanCheck helps you spend your time and money smarter so you can support your favourite artists">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="FanCheck: make your music spend smarter">
-    <meta name="twitter:description" content="FanCheck helps you spend your time and money smarter so you can support your favourite artists">
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <title>FanCheck — Know Where Your Money Goes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/landing.css">
 </head>
@@ -22,10 +14,7 @@
 
     <header class="site-header">
         <nav class="nav" aria-label="Main navigation">
-            <strong class="nav-logo">
-                <img class="nav-logo-mark" src="assets/fancheck-logo.svg" alt="" width="28" height="28">
-                <span>FanCheck</span>
-            </strong>
+            <strong class="nav-logo">FanCheck</strong>
             <ul class="nav-links" role="list">
                 <li><a href="#how-it-works">How it works</a></li>
                 <li><a href="#compare">Why it matters</a></li>
@@ -86,77 +75,6 @@
                     <a href="pages/auth.html#signup" class="btn-primary" style="font-size:0.82rem; padding: 10px 20px;">See your real numbers</a>
                 </footer>
             </aside>
-        </section>
-
-        <!-- ARTIST CAROUSEL -->
-        <section class="artist-carousel" aria-labelledby="artist-carousel-heading">
-            <header class="artist-carousel-header">
-                <span class="eyebrow">Every fan counts</span>
-                <h2 id="artist-carousel-heading" class="section-title">Tiny fan actions add up fast.</h2>
-                <p class="artist-carousel-copy">
-                    One stream looks small. A room full of fans streaming, buying merch, and showing up for gigs can pull real money back to the artists they love.
-                </p>
-            </header>
-
-            <div class="artist-carousel-viewport" data-artist-carousel aria-label="Popular artist support examples">
-                <ul class="artist-carousel-track" role="list">
-                    <li class="artist-showcase-card card-lime">
-                        <img src="assets/artists/gstar.jpeg" alt="GSTAR artist portrait" width="447" height="447">
-                        <div class="artist-card-body">
-                            <h3>GSTAR</h3>
-                            <ul class="artist-metrics" role="list">
-                                <li>178K streams</li>
-                                <li>5 concerts</li>
-                                <li>£500 reached the artists</li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="artist-showcase-card card-teal">
-                        <img src="assets/artists/boy-yzy.jpg" alt="BOY-YZY artist portrait" width="700" height="467">
-                        <div class="artist-card-body">
-                            <h3>BOY-YZY</h3>
-                            <ul class="artist-metrics" role="list">
-                                <li>102K streams</li>
-                                <li>merch</li>
-                                <li>£200 reached the artists</li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="artist-showcase-card card-lime">
-                        <img src="assets/artists/365-days.jpeg" alt="365 Days artist portrait" width="439" height="455">
-                        <div class="artist-card-body">
-                            <h3>365 Days</h3>
-                            <ul class="artist-metrics" role="list">
-                                <li>542K streams</li>
-                                <li>merch</li>
-                                <li>£700 reached the artists</li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="artist-showcase-card card-violet">
-                        <img src="assets/artists/hello-world.jpeg" alt="Hello World artist portrait" width="776" height="576">
-                        <div class="artist-card-body">
-                            <h3>Hello World</h3>
-                            <ul class="artist-metrics" role="list">
-                                <li>240K streams</li>
-                                <li>6 concerts</li>
-                                <li>£835 reached the artists</li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="artist-showcase-card card-lime">
-                        <img src="assets/artists/404-not-found.jpeg" alt="404 Not found artist portrait" width="547" height="365">
-                        <div class="artist-card-body">
-                            <h3>404 Not found</h3>
-                            <ul class="artist-metrics" role="list">
-                                <li>1314K streams</li>
-                                <li>9 concerts</li>
-                                <li>£900 reached the artists</li>
-                            </ul>
-                        </div>
-                    </li>
-                </ul>
-            </div>
         </section>
 
         <!-- STATS -->
@@ -265,7 +183,7 @@
             </aside>
         </section>
 
-        <!-- FREEMIUM -->
+        <!-- PRICING — updated to £2.99/mo -->
         <section class="pricing" id="pricing" aria-labelledby="pricing-heading">
             <header class="pricing-header">
                 <span class="eyebrow">Pricing</span>
@@ -290,7 +208,7 @@
                     <header class="pricing-card-header">
                         <span class="pricing-badge">Most popular</span>
                         <h3>Supporter</h3>
-                        <p class="pricing-price">£3.99 <span>/ month</span></p>
+                        <p class="pricing-price">£2.99 <span>/ month</span></p>
                     </header>
                     <ul class="pricing-features" role="list">
                         <li>Everything in Fan</li>
@@ -315,13 +233,9 @@
     </main>
 
     <footer class="site-footer">
-        <strong class="nav-logo">
-            <img class="nav-logo-mark" src="assets/fancheck-logo.svg" alt="" width="28" height="28">
-            <span>FanCheck</span>
-        </strong>
+        <strong class="nav-logo">FanCheck</strong>
         <p class="footer-note">Built for music fans. Made at a hackathon.</p>
     </footer>
 
-    <script src="js/landing.js"></script>
 </body>
 </html>
