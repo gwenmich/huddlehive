@@ -1,35 +1,56 @@
 # FanCheck Privacy Notes
 
-FanCheck is designed to keep browser-extension analysis consent-based and
-minimized.
+FanCheck is designed around consent, minimization, and source transparency. This
+document describes the current demo behavior for the Chrome extension, backend
+analysis, site reports, and global data confidence.
 
-## Page Analysis
+## Page Text And Consent
 
-- FanCheck does not automatically send page text to the backend.
-- Page text is sent only after user consent.
-- Sent text should be redacted by the extension first.
-- Redaction is best-effort and may miss personal details.
-- Redacted snippets and minimized search context may be processed by Anthropic,
-  a third-party AI provider, for analysis and public web-search grounding.
-- Search context should not include exact seat numbers, order IDs, names, email
-  addresses, payment details, account information, exact basket contents, or raw
-  checkout text.
+- Page text is never sent automatically.
+- Known-domain detection runs locally in the browser until the user chooses to
+  check the page.
+- Analysis sends a short redacted snippet only after explicit consent.
+- Consent can be granted once, for one site, or globally.
+- Users can revoke site-level and global consent from the extension popup.
+- Declining consent means no page text is sent for analysis.
 
-## Storage
+## Best-Effort Redaction
+
+The extension redacts page text before sending it to the backend, but redaction
+is best-effort and may miss personal details. Users should avoid running
+analysis on pages that contain sensitive information they do not want processed.
+
+Search context is minimized and should avoid names, emails, order IDs, seat
+details, payment details, account information, full basket contents, and raw
+checkout text.
+
+## Third-Party AI Processing
+
+Redacted snippets and minimized search context may be processed by Anthropic, a
+third-party AI provider, for analysis and public Web Search grounding.
+
+FanCheck calls Anthropic from the backend only. The Chrome extension must never
+contain an Anthropic API key and must never call Anthropic directly.
+
+## Storage And Caching
 
 - Raw page snippets are not intentionally stored.
 - Redacted snippets are not intentionally stored.
-- Derived analysis results may be cached for up to 24 hours.
+- Derived transaction analysis results and citation metadata may be cached for
+  up to 24 hours.
+- Global music-industry DataPoint confidence results may also be stored and
+  refreshed on a 24-hour cadence.
 - Stored analysis records contain only sanitized display-safe fields such as
-  platform, hostname, purchase type, detected total, estimate summaries,
-  warnings, alternatives, cache status, and source citations.
+  hostname, platform, purchase type, detected total, estimate summaries,
+  warnings, alternatives, source-check status, cache status, and validated
+  citation metadata.
 
 ## Site Reports
 
-If the extension does not trigger, users can report a site as a possible music
-transaction site.
+If the extension does not trigger, users can manually report a site as a
+possible music transaction site.
 
-Site reports send:
+Site reports send metadata only:
 
 - URL without query string or fragment
 - hostname
@@ -37,24 +58,28 @@ Site reports send:
 - optional user note
 - local detection signals
 
-Site reports do not send page text and do not trigger automatic analysis. URL,
-title, and notes can still reveal purchase intent, so users should not include
-personal, order, payment, or account details in report notes.
+Site reports do not send page text and do not trigger automatic analysis.
+Reports are queued for vetting. Approved reports are candidates for future
+host-permission or heuristic updates only.
 
-FanCheck may send site-report metadata to Anthropic for advisory triage. This
-triage uses URL without query string, hostname, page title, optional user note,
-and local detection signals only. AI triage does not automatically approve a
-site, enable analysis, or change host permissions.
+URL, title, and note text can still reveal purchase intent. User notes should
+not include names, emails, order IDs, seat details, payment details, account
+details, or other sensitive information.
 
-## Metadata
+FanCheck may send site-report metadata to Anthropic for advisory triage. AI
+triage does not automatically approve a site, enable analysis, change host
+permissions, or trigger page analysis.
+
+## Analysis Detail Pages
+
+`/analysis/<analysis_id>` renders sanitized stored analysis fields and validated
+source links. It must not render raw page snippets, redacted snippets, full
+checkout URLs, query strings, order IDs, seat details, payment details, account
+details, or full basket contents.
+
+## Operational Metadata
 
 FanCheck may log operational metadata such as timestamp, hostname, auth status,
 result type, source-check status, cache status, latency, and error status.
 
 FanCheck should not log raw page text or redacted snippets.
-
-## Consent
-
-The extension should provide controls to grant or revoke site-level and global
-analysis consent. Site reports are separate from analysis consent because they
-do not send page text or trigger source-backed analysis.
