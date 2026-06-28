@@ -3,7 +3,7 @@
  * Wired to the exact endpoint spec from the backend team.
  */
 
-const API_BASE = window.location.origin;
+const API_BASE = "http://127.0.0.1:5001";
 
 // ── Core fetch wrapper ────────────────────────────────────────────────
 async function request(method, path, body = null) {
@@ -20,6 +20,9 @@ async function request(method, path, body = null) {
     let data = null;
     const ct = res.headers.get('Content-Type') || '';
     data = ct.includes('application/json') ? await res.json() : { message: await res.text() };
+    if (!res.ok && data && data.error && !data.message) {
+      data.message = data.error;
+    }
     return { ok: res.ok, status: res.status, data };
   } catch {
     return {
@@ -46,11 +49,13 @@ export async function login(email, password) {
  * GET /auth/spotify
  * Auth required. This is a BROWSER REDIRECT, not a fetch call.
  * We append the token as a query param because a redirect
- * cannot carry an Authorization header.
+ * cannot carry an Authorization header, and preserve the
+ * frontend origin so Spotify callbacks return to the right host.
  */
 export function connectSpotify() {
   const token = localStorage.getItem('hh_token');
-  window.location.href = `${API_BASE}/auth/spotify?token=${encodeURIComponent(token)}`;
+  const frontendUrl = window.location.origin;
+  window.location.href = `${API_BASE}/auth/spotify?token=${encodeURIComponent(token)}&frontend_url=${encodeURIComponent(frontendUrl)}`;
 }
 
 // ── Report ────────────────────────────────────────────────────────────

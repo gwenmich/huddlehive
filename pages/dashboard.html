@@ -40,6 +40,18 @@
       </div>
     </section>
 
+    <!-- ── Spotify connect failed state ── -->
+    <section id="connect-error" class="gate" aria-labelledby="connect-error-heading" hidden>
+      <div class="gate-inner gate-error">
+        <span class="eyebrow">Connection failed</span>
+        <h1 id="connect-error-heading" class="gate-title">Spotify connection failed</h1>
+        <p id="connect-error-message" class="gate-desc">We couldn't complete your Spotify connection. Please try again or check your browser settings.</p>
+        <button id="btn-spotify-retry" class="btn-primary btn-spotify-connect" type="button">
+          Try again
+        </button>
+      </div>
+    </section>
+
     <!-- ── Loading state ── -->
     <section id="loading-state" class="loading-state" aria-live="polite" aria-label="Loading your report">
       <div class="spinner" aria-hidden="true"></div>

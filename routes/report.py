@@ -1,5 +1,3 @@
-from routes.spotify import get_valid_token
-
 import requests
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -20,7 +18,15 @@ def spotify_get(endpoint, token):
         f"{SPOTIFY_API_BASE}{endpoint}",
         headers={"Authorization": f"Bearer {token}"}
     )
-    return response.json()
+    try:
+        data = response.json()
+    except ValueError:
+        return {"error": "Invalid Spotify API response"}
+
+    if response.status_code != 200:
+        return {"error": data.get("error") or data.get("error_description") or "Spotify API request failed"}
+
+    return data
 
 
 def get_ethical_links(artist_name):
@@ -62,16 +68,31 @@ def get_ethical_links(artist_name):
 @jwt_required()
 def get_report():
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    try:
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid user identity"}), 401
 
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
     if not user.spotify_access_token:
         return jsonify({"error": "Spotify not connected"}), 400
 
     token = get_valid_token(user)
+    if not token:
+        return jsonify({"error": "Spotify token refresh failed"}), 400
 
     top_artists_data = spotify_get("/me/top/artists?limit=10&time_range=medium_term", token)
     top_tracks_data = spotify_get("/me/top/tracks?limit=20&time_range=medium_term", token)
     profile_data = spotify_get("/me", token)
+
+    if not isinstance(top_artists_data, dict) or top_artists_data.get("error"):
+        return jsonify({"error": "Failed to fetch Spotify artist data"}), 502
+    if not isinstance(top_tracks_data, dict) or top_tracks_data.get("error"):
+        return jsonify({"error": "Failed to fetch Spotify track data"}), 502
+    if not isinstance(profile_data, dict) or profile_data.get("error"):
+        return jsonify({"error": "Failed to fetch Spotify profile data"}), 502
 
     artists = []
     total_estimated_earnings = 0
@@ -87,7 +108,7 @@ def get_report():
             "name": artist["name"],
             "popularity_score": artist["popularity"],
             "estimated_streams_from_you": estimated_streams,
-            "estimated_earnings_from_you_usd": estimated_earnings,
+            "estimated_earnings_from_you_gbp": estimated_earnings,
             "image": artist["images"][0]["url"] if artist["images"] else None,
             "spotify_url": artist["external_urls"]["spotify"],
             "ethical_alternatives": ethical_links
@@ -100,11 +121,11 @@ def get_report():
     )
 
     summary = {
-        "total_estimated_paid_to_artists_usd": round(total_estimated_earnings, 2),
-        "yearly_spotify_subscription_gbp": round(11.99 * 12, 2),
+        "total_estimated_paid_to_artists_gbp": round(total_estimated_earnings, 2),
+        "yearly_spotify_subscription_gbp": round(yearly_subscription_cost, 2),
         "percentage_reaching_artists": f"{percentage_to_artists}%",
         "top_tracks_count": len(top_tracks_data.get("items", [])),
-        "currency_note": "Artist payouts are calculated in USD — the industry standard. Your subscription cost is shown in GBP."
+        "currency_note": "Artist payouts are estimated in GBP to match this report. Your subscription cost is also shown in GBP."
     }
 
 

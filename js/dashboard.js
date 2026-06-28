@@ -14,8 +14,11 @@ if (!isLoggedIn()) {
 const spotifyGate  = document.getElementById('spotify-gate');
 const loadingState = document.getElementById('loading-state');
 const errorState   = document.getElementById('error-state');
+const connectError = document.getElementById('connect-error');
+const connectErrorMsg = document.getElementById('connect-error-message');
 const errorMsg     = document.getElementById('error-message');
 const report       = document.getElementById('report');
+const btnSpotifyRetry = document.getElementById('btn-spotify-retry');
 
 // Nav
 const navEmail   = document.getElementById('nav-email');
@@ -40,9 +43,9 @@ const compareNote  = document.getElementById('compare-note');
 
 // ── State helpers ─────────────────────────────────────────────────────
 function showOnly(el) {
-  [spotifyGate, loadingState, errorState, report].forEach(s => {
-    if (s === el) s.removeAttribute('hidden');
-    else s.setAttribute('hidden', '');
+  [spotifyGate, loadingState, errorState, connectError, report].forEach(s => {
+    if (s === el) s?.removeAttribute('hidden');
+    else s?.setAttribute('hidden', '');
   });
 }
 
@@ -54,7 +57,8 @@ btnLogout.addEventListener('click', () => {
 
 // ── Spotify connect button ────────────────────────────────────────────
 document.getElementById('btn-spotify').addEventListener('click', connectSpotify);
-
+// ── Retry button ──────────────────────────────────────────────────────
+document.getElementById('btn-spotify-retry').addEventListener('click', connectSpotify);
 // ── Retry button ──────────────────────────────────────────────────────
 document.getElementById('btn-retry').addEventListener('click', loadReport);
 
@@ -125,6 +129,15 @@ function formatNumber(n) {
 
 // ── Main load function ────────────────────────────────────────────────
 async function loadReport() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('spotify') === 'failed') {
+    const description = params.get('spotify_error_description');
+    const errorKey = params.get('spotify_error');
+    connectErrorMsg.textContent = description || `Spotify connection failed: ${errorKey || 'unknown error'}`;
+    showOnly(connectError);
+    return;
+  }
+
   showOnly(loadingState);
 
   const { ok, status, data } = await getReport();
@@ -138,11 +151,18 @@ async function loadReport() {
   if (!ok) {
     // Check if Spotify isn't connected (backend may return a specific message)
     const msg = (data.message || '').toLowerCase();
-    if (msg.includes('spotify') && (msg.includes('connect') || msg.includes('not linked') || msg.includes('not found'))) {
+    const spotifyNotConnected = msg.includes('spotify') && (
+      msg.includes('connect') ||
+      msg.includes('not connected') ||
+      msg.includes('not linked') ||
+      msg.includes('not found') ||
+      msg.includes('not connected')
+    );
+    if (spotifyNotConnected) {
       showOnly(spotifyGate);
       return;
     }
-    errorMsg.textContent = data.message || 'Something went wrong loading your report. Please try again.';
+    errorMsg.textContent = data.message || data.error || 'Something went wrong loading your report. Please try again.';
     showOnly(errorState);
     return;
   }
@@ -153,7 +173,7 @@ async function loadReport() {
   // ── Summary stats ──────────────────────────────────────────────────
   const s = data.summary;
   statSubscription.textContent = `£${s.yearly_spotify_subscription_gbp.toFixed(2)}`;
-  statToArtists.textContent    = `$${s.total_estimated_paid_to_artists_usd.toFixed(2)}`;
+  statToArtists.textContent    = `£${s.total_estimated_paid_to_artists_gbp.toFixed(2)}`;
   statPercentage.textContent   = s.percentage_reaching_artists;
   statTracks.textContent       = s.top_tracks_count;
 

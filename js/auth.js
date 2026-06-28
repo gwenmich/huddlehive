@@ -107,8 +107,9 @@ formLogin.addEventListener('submit', async (e) => {
     saveToken(data.token);
     window.location.href = '../pages/dashboard.html';
   } else {
-    showError(formLogin, data.message || 'Incorrect email or password.');
-    showToast(data.message || 'Login failed', 'error');
+    const message = data.message || data.error || 'Incorrect email or password.';
+    showError(formLogin, message);
+    showToast(message, 'error');
   }
 });
 
@@ -151,7 +152,8 @@ formSignup.addEventListener('submit', async (e) => {
     }
   } else {
     setLoading(btn, false);
-    showError(formSignup, data.message || 'Registration failed. That email may already be in use.');
-    showToast(data.message || 'Registration failed', 'error');
+    const message = data.message || data.error || 'Registration failed. That email may already be in use.';
+    showError(formSignup, message);
+    showToast(message, 'error');
   }
 });
