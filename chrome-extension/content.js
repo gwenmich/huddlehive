@@ -176,7 +176,7 @@
     if (knownDomain) {
       categories.add('known_host');
       addUnique(signals, 'known_host');
-      score += 15;
+      score += 20;
     }
     if (includesAny(path, urlTransactionSignals)) {
       categories.add('url_transaction');
@@ -224,11 +224,34 @@
       score -= 10;
     }
 
+    const hasPurchaseSignal = categories.has('url_transaction') || categories.has('text_transaction');
+    const hasMusicSignal = categories.has('title_music') || categories.has('text_music') || categories.has('music_merch');
+    if (knownDomain && categories.has('price') && hasPurchaseSignal) {
+      addUnique(signals, 'known_host_purchase_evidence');
+      score += 15;
+    } else if (knownDomain && categories.has('price') && hasMusicSignal) {
+      addUnique(signals, 'known_host_music_purchase_evidence');
+      score += 10;
+    }
+
     const positiveCategories = [...categories].filter((category) => positivePreflightCategories.includes(category));
     const categoryCount = positiveCategories.length;
     score = Math.max(0, Math.min(100, score));
     const band = bandForScore(score);
-    const shouldAnalyze = score >= PREFLIGHT_PASS_SCORE && ['HIGH', 'MEDIUM'].includes(band) && categoryCount >= 2;
+    const knownHostReady = Boolean(
+      knownDomain
+      && categories.has('price')
+      && (hasPurchaseSignal || hasMusicSignal)
+      && score >= PREFLIGHT_PASS_SCORE
+    );
+    const unknownHostReady = Boolean(
+      !knownDomain
+      && categories.has('price')
+      && hasPurchaseSignal
+      && hasMusicSignal
+      && score >= PREFLIGHT_PASS_SCORE
+    );
+    const shouldAnalyze = ['HIGH', 'MEDIUM'].includes(band) && categoryCount >= 2 && (knownHostReady || unknownHostReady);
     if (!shouldAnalyze) addUnique(reasons, 'preflight_failed');
     if (!knownDomain && categories.has('music_merch') && !(categories.has('price') && (categories.has('url_transaction') || categories.has('text_transaction')))) {
       addUnique(reasons, 'unknown_merch_missing_transaction_signal');
